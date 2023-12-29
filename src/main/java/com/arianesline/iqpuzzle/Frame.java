@@ -30,8 +30,8 @@ public class Frame {
             }
         }
 
-        challenge.positioningList.parallelStream().forEach(positioning -> {
-            positioning.part.balls.parallelStream().forEach(ball -> {
+        challenge.positioningList.forEach(positioning -> {
+            positioning.part.balls.forEach(ball -> {
                 int xFactor = (positioning.flipState == FlipState.FLIPPED) ? -1 : 1;
                 int px, py;
                 switch (positioning.orientation) {
@@ -107,5 +107,39 @@ public class Frame {
 
     private boolean xInvalid(int i) {
         return (i < 0 || i >= width);
+    }
+
+    public boolean canAdd(Part part, int posx, int posy, Orientation orientation, FlipState flipState) {
+        for (Ball ball : part.balls) {
+            int xFactor = (flipState == FlipState.FLIPPED) ? -1 : 1;
+            int px, py;
+            switch (orientation) {
+                case UP -> {
+
+                    px = posx + ball.rpx * xFactor;
+                    py = posy + ball.rpy;
+                }
+                case RIGHT -> {
+                    px = posx + ball.rpy;
+                    py = posy - ball.rpx * xFactor;
+                }
+                case LEFT -> {
+                    px = posx - ball.rpy;
+                    py = posy + ball.rpx * xFactor;
+                }
+                case DOWN -> {
+                    px = posx - ball.rpx * xFactor;
+                    py = posy - ball.rpy;
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + orientation);
+            }
+            if (xInvalid(px) || yInvalid(py))
+                return false;
+
+            if (balls[px][py] != null) {
+                return false;
+            }
+        }
+        return true;
     }
 }

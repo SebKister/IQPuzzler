@@ -52,6 +52,8 @@ public class IQPuzzleController implements Initializable {
     ExecutorService executorService;
 
     public static Placement currentPlacement = new Placement(0);
+    static long startSolve;
+    static long endSolve;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -279,19 +281,24 @@ public class IQPuzzleController implements Initializable {
     }
 
     public void onSolve() {
+        startSolve = System.currentTimeMillis();
+        endSolve = 0;
         solutionPlacements.clear();
         runningTaskCounter.set(0);
         createdTaskCounter.set(0);
+        solutionCounter.set(0);
         var solverTask = new SolverTask(this, new Placement(currentPlacement, null));
 
         runningTaskCounter.incrementAndGet();
         createdTaskCounter.incrementAndGet();
         executorService = Executors.newCachedThreadPool();
+       // executorService = Executors.newWorkStealingPool();
         executorService.submit(solverTask);
     }
 
     public void displayTasks() {
-        messageLabel.setText("Task :" + runningTaskCounter.get() + ":" + createdTaskCounter.get());
+        messageLabel.setText("Task : " + runningTaskCounter.get() + " : " + createdTaskCounter.get()
+                + " - Duration : " + ( endSolve - startSolve) / 1000.0);
     }
 
     public void displaySolutionCount() {

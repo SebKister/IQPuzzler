@@ -11,7 +11,8 @@ import static com.arianesline.iqpuzzle.IQPuzzleController.*;
 
 public class SolverTask extends Task<Void> {
 
-    private static final int MAXTASK = Runtime.getRuntime().availableProcessors() - 1;
+
+    private static final boolean SINGLETHREADED = false;
     IQPuzzleController controller;
     Placement placement;
 
@@ -34,9 +35,17 @@ public class SolverTask extends Task<Void> {
                 if (isUniqueSolution(this.placement)) {
                     solutionPlacements.add(this.placement);
                     solutionCounter.incrementAndGet();
+                    // Platform.runLater(() -> controller.onRefreshUI());
+                    System.out.println(solutionCounter.get()+"Solution found : " + createdTaskCounter.get());
                 }
             }
-            if (runningTaskCounter.decrementAndGet() == 0)  Platform.runLater(() -> controller.onRefreshUI());
+
+            if (runningTaskCounter.decrementAndGet() == 0) {
+                endSolve = System.currentTimeMillis();
+                System.out.println("Duration :"+(endSolve-startSolve)/1000.0);
+                Platform.runLater(() -> controller.onRefreshUI());
+            }
+
             return null;
         }
 
@@ -44,38 +53,52 @@ public class SolverTask extends Task<Void> {
         frame.loadPlacement(this.placement);
         List<Future<?>> tasks = new ArrayList<>();
         //Go over all available parts ( not used in Placement)
-        for (Part part : freeParts) {
-            for (int i = 0; i < WIDTH; i++) {
-                for (int j = 0; j < HEIGHT; j++) {
-                    // Go over all empty cell
-                    if (frame.balls[i][j] == null) {
-                        //Go over all rotation states
-                        for (Orientation orient : Orientation.values()) {
-                            //Go over all flip states
-                            for (FlipState flststate : FlipState.values()) {
-                                Positioning positioning = new Positioning(part, i, j, orient, flststate);
-                                if (frame.canAdd(positioning)) {
-                                    // Create new Task
 
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                // Go over all empty cell
+                if (frame.balls[i][j] == null) {
+                    //Go over all rotation states
+                    for (Orientation orient : Orientation.values()) {
+                        //Go over all flip states
+                        for (FlipState flststate : FlipState.values()) {
+                            for (Part part : freeParts) {
+
+                                if (frame.canAdd(part, i, j, orient, flststate)) {
+                                    // Create new Task
+                                    final Positioning positioning = new Positioning(part, i, j, orient, flststate);
                                     var solverTask = new SolverTask(this.controller, new Placement(this.placement, positioning));
                                     //Start task if place
-                                    while (tasks.size() >= MAXTASK) {
-                                        tasks.removeIf(Future::isDone);
-                                        //  Thread.sleep(10);
+                                    if (SINGLETHREADED) {
+                                        runningTaskCounter.incrementAndGet();
+                                        createdTaskCounter.incrementAndGet();
+                                        var future = controller.executorService.submit(solverTask);
+                                        while (!future.isDone())
+                                            Thread.yield();
+                                    } else {
+                                        while (tasks.size() >= freeParts.size()) {
+                                            tasks.removeIf(Future::isDone);
+                                            Thread.yield();
+                                        }
+                                        runningTaskCounter.incrementAndGet();
+                                        createdTaskCounter.incrementAndGet();
+                                        tasks.add(controller.executorService.submit(solverTask));
                                     }
-
-                                    tasks.add(controller.executorService.submit(solverTask));
-                                    runningTaskCounter.incrementAndGet();
-                                    createdTaskCounter.incrementAndGet();
                                 }
                             }
-
                         }
                     }
                 }
             }
         }
-        if (runningTaskCounter.decrementAndGet() == 0) Platform.runLater(() -> controller.onRefreshUI());
+
+        if (runningTaskCounter.decrementAndGet() == 0) {
+            endSolve = System.currentTimeMillis();
+            System.out.println("Duration :"+(endSolve-startSolve)/1000.0);
+            Platform.runLater(() -> controller.onRefreshUI());
+            controller.executorService.shutdown();
+        }
+
         return null;
     }
 }
