@@ -8,70 +8,74 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
 
 public class SolverTask extends Task<Void> {
 
     IQPuzzleController controller;
-    Placement placement;
+    final Frame frame = new Frame(WIDTH, HEIGHT);
+    final List<Placement> tasks = new ArrayList<>();
 
-    public SolverTask(IQPuzzleController IQPuzzleController, Placement placement) {
+    public SolverTask(IQPuzzleController IQPuzzleController) {
         this.controller = IQPuzzleController;
-        this.placement = placement;
+
     }
 
     @Override
     protected Void call() throws Exception {
-        var freeParts = IQPuzzleController.parts.stream()
-                .filter(part -> placement.positioningList.stream()
-                        .map(positioning -> positioning.part)
-                        .noneMatch(part1 -> part1 == part)).toList();
+        while (keepAlive.get()) {
+            var taskPlacement = solverTaskQueue.pollLast();
 
-        //Test for solution found
-        if (freeParts.isEmpty()) {
-            // A solution has been found
-            synchronized (solutionPlacements) {
-                if (isUniqueSolution(this.placement)) {
-                    solutionPlacements.add(this.placement);
-                    solutionCounter.incrementAndGet();
-                    System.out.println(solutionCounter.get() + "Solution found : " + createdTaskCounter.get());
+            if (taskPlacement != null) {
+                var freeParts = IQPuzzleController.parts.stream()
+                        .filter(part -> taskPlacement.positioningList.stream()
+                                .map(positioning -> positioning.part)
+                                .noneMatch(part1 -> part1 == part)).toList();
+
+                //Test for solution found
+                if (freeParts.isEmpty()) {
+                    // A solution has been found
+                    synchronized (solutionPlacements) {
+                        if (isUniqueSolution(taskPlacement)) {
+                            solutionPlacements.add(taskPlacement);
+                            solutionCounter.incrementAndGet();
+                          //  System.out.println(solutionCounter.get() + "Solution found : " + createdTaskCounter.get());
+                        }
+                    }
+                    continue;
                 }
-            }
-            runningTaskCounter.decrementAndGet();
-            if (verbose) System.out.println(runningTaskCounter.get() + " - " + createdTaskCounter.get());
-            return null;
-        }
 
-        var frame = new Frame(WIDTH, HEIGHT);
-        frame.loadPlacement(this.placement);
-        List<SolverTask> tasks = new ArrayList<>();
-        //Go over all available parts ( not used in Placement)
+                frame.loadPlacement(taskPlacement);
+                tasks.clear();
+                //Go over all available parts ( not used in Placement)
 
-        for (int i = 0; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                // Go over all empty cell
-                if (frame.balls[i][j] == null) {
-                    //Go over all rotation states
-                    for (Orientation orient : Orientation.values()) {
-                        //Go over all flip states
-                        for (FlipState flststate : FlipState.values()) {
-                            for (Part part : freeParts) {
+                for (int i = 0; i < WIDTH; i++) {
+                    for (int j = 0; j < HEIGHT; j++) {
+                        // Go over all empty cell
+                        if (frame.balls[i][j] == null) {
+                            //Go over all rotation states
+                            for (Orientation orient : Orientation.values()) {
+                                //Go over all flip states
+                                for (FlipState flststate : FlipState.values()) {
+                                    for (Part part : freeParts) {
 
-                                if (frame.canAdd(part, i, j, orient, flststate)) {
-                                    // Create new Task
-                                    final Positioning positioning = new Positioning(part, i, j, orient, flststate);
-                                    tasks.add(new SolverTask(this.controller, new Placement(this.placement, positioning)));
-                                    createdTaskCounter.incrementAndGet();
-
+                                        if (frame.canAdd(part, i, j, orient, flststate)) {
+                                            // Create new Task
+                                            final Positioning positioning = new Positioning(part, i, j, orient, flststate);
+                                            tasks.add(new Placement(taskPlacement, positioning));
+                                            createdTaskCounter.incrementAndGet();
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                solverTaskQueue.addAll(tasks);
+                // System.out.println(createdTaskCounter.get());
             }
+            Thread.yield();
         }
-        solverTaskQueue.addAll(tasks);
-        runningTaskCounter.decrementAndGet();
-        if (verbose) System.out.println(runningTaskCounter.get() + " - " + createdTaskCounter.get());
         return null;
     }
 }

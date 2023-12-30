@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,7 +37,7 @@ public class IQPuzzleController implements Initializable {
     public FlowPane partsFlowPane;
     public Label messageLabel;
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
-    public static final ConcurrentLinkedQueue<SolverTask> solverTaskQueue = new ConcurrentLinkedQueue<>();
+    public static final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
     public Label solutionLabel;
     public FlowPane solutionFlowPane;
     public ComboBox<Pane> partComboBox;
@@ -51,7 +52,7 @@ public class IQPuzzleController implements Initializable {
     public final static AtomicInteger runningTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger createdTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
-    public final static ExecutorService executorService = Executors.newCachedThreadPool(); ;
+    public static ExecutorService executorService = Executors.newCachedThreadPool();
     public static SolverDistributionTask distributionTask;
     public static Placement currentPlacement = new Placement(0);
     static long startSolve;
@@ -289,10 +290,9 @@ public class IQPuzzleController implements Initializable {
         runningTaskCounter.set(0);
         createdTaskCounter.set(0);
         solutionCounter.set(0);
-        var solverTask = new SolverTask(this, new Placement(currentPlacement, null));
-        solverTaskQueue.add(solverTask);
+        solverTaskQueue.add(currentPlacement);
         createdTaskCounter.incrementAndGet();
-
+        executorService= Executors.newCachedThreadPool();
         distributionTask=new SolverDistributionTask(this);
         executorService.submit(distributionTask);
     }
