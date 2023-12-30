@@ -11,8 +11,6 @@ import static com.arianesline.iqpuzzle.IQPuzzleController.*;
 
 public class SolverTask extends Task<Void> {
 
-
-    private static final boolean SINGLETHREADED = false;
     IQPuzzleController controller;
     Placement placement;
 
@@ -36,16 +34,15 @@ public class SolverTask extends Task<Void> {
                     solutionPlacements.add(this.placement);
                     solutionCounter.incrementAndGet();
                     // Platform.runLater(() -> controller.onRefreshUI());
-                    System.out.println(solutionCounter.get()+"Solution found : " + createdTaskCounter.get());
+                    System.out.println(solutionCounter.get() + "Solution found : " + createdTaskCounter.get());
                 }
             }
 
             if (runningTaskCounter.decrementAndGet() == 0) {
                 endSolve = System.currentTimeMillis();
-                System.out.println("Duration :"+(endSolve-startSolve)/1000.0);
+                System.out.println("Duration :" + (endSolve - startSolve) / 1000.0);
                 Platform.runLater(() -> controller.onRefreshUI());
             }
-
             return null;
         }
 
@@ -69,36 +66,30 @@ public class SolverTask extends Task<Void> {
                                     final Positioning positioning = new Positioning(part, i, j, orient, flststate);
                                     var solverTask = new SolverTask(this.controller, new Placement(this.placement, positioning));
                                     //Start task if place
-                                    if (SINGLETHREADED) {
-                                        runningTaskCounter.incrementAndGet();
-                                        createdTaskCounter.incrementAndGet();
-                                        var future = controller.executorService.submit(solverTask);
-                                        while (!future.isDone())
-                                            Thread.yield();
-                                    } else {
-                                        while (tasks.size() >= freeParts.size()) {
-                                            tasks.removeIf(Future::isDone);
-                                            Thread.yield();
-                                        }
-                                        runningTaskCounter.incrementAndGet();
-                                        createdTaskCounter.incrementAndGet();
-                                        tasks.add(controller.executorService.submit(solverTask));
+                                    while (tasks.size() >= freeParts.size()) {
+                                        tasks.removeIf(Future::isDone);
+                                        Thread.yield();
                                     }
-                                }
+                                    runningTaskCounter.incrementAndGet();
+                                    createdTaskCounter.incrementAndGet();
+                                    tasks.add(controller.executorService.submit(solverTask));
+
                             }
                         }
                     }
                 }
             }
         }
-
-        if (runningTaskCounter.decrementAndGet() == 0) {
-            endSolve = System.currentTimeMillis();
-            System.out.println("Duration :"+(endSolve-startSolve)/1000.0);
-            Platform.runLater(() -> controller.onRefreshUI());
-            controller.executorService.shutdown();
-        }
-
-        return null;
     }
+
+        if(runningTaskCounter.decrementAndGet()==0)
+
+    {
+        endSolve = System.currentTimeMillis();
+        System.out.println("Duration :" + (endSolve - startSolve) / 1000.0);
+        Platform.runLater(() -> controller.onRefreshUI());
+        controller.executorService.shutdown();
+    }
+        return null;
+}
 }
