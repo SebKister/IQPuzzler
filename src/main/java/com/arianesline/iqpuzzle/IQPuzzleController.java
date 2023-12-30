@@ -36,11 +36,13 @@ public class IQPuzzleController implements Initializable {
     public FlowPane partsFlowPane;
     public Label messageLabel;
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
+    public static final ConcurrentLinkedQueue<SolverTask> solverTaskQueue = new ConcurrentLinkedQueue<>();
     public Label solutionLabel;
     public FlowPane solutionFlowPane;
     public ComboBox<Pane> partComboBox;
     public GridPane toolPane;
     public Button onLoadChallenge;
+    public final static boolean verbose=false;
     Frame currentFrame;
 
     final static List<Part> parts = new ArrayList<>();
@@ -49,8 +51,8 @@ public class IQPuzzleController implements Initializable {
     public final static AtomicInteger runningTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger createdTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
-    ExecutorService executorService;
-
+    public final static ExecutorService executorService = Executors.newCachedThreadPool(); ;
+    public static SolverDistributionTask distributionTask;
     public static Placement currentPlacement = new Placement(0);
     static long startSolve;
     static long endSolve;
@@ -288,12 +290,11 @@ public class IQPuzzleController implements Initializable {
         createdTaskCounter.set(0);
         solutionCounter.set(0);
         var solverTask = new SolverTask(this, new Placement(currentPlacement, null));
-
-        runningTaskCounter.incrementAndGet();
+        solverTaskQueue.add(solverTask);
         createdTaskCounter.incrementAndGet();
-        executorService = Executors.newCachedThreadPool();
-       // executorService = Executors.newWorkStealingPool();
-        executorService.submit(solverTask);
+
+        distributionTask=new SolverDistributionTask(this);
+        executorService.submit(distributionTask);
     }
 
     public void displayTasks() {

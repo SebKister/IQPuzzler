@@ -33,22 +33,17 @@ public class SolverTask extends Task<Void> {
                 if (isUniqueSolution(this.placement)) {
                     solutionPlacements.add(this.placement);
                     solutionCounter.incrementAndGet();
-                    // Platform.runLater(() -> controller.onRefreshUI());
                     System.out.println(solutionCounter.get() + "Solution found : " + createdTaskCounter.get());
                 }
             }
-
-            if (runningTaskCounter.decrementAndGet() == 0) {
-                endSolve = System.currentTimeMillis();
-                System.out.println("Duration :" + (endSolve - startSolve) / 1000.0);
-                Platform.runLater(() -> controller.onRefreshUI());
-            }
+            runningTaskCounter.decrementAndGet();
+            if (verbose) System.out.println(runningTaskCounter.get() + " - " + createdTaskCounter.get());
             return null;
         }
 
         var frame = new Frame(WIDTH, HEIGHT);
         frame.loadPlacement(this.placement);
-        List<Future<?>> tasks = new ArrayList<>();
+        List<SolverTask> tasks = new ArrayList<>();
         //Go over all available parts ( not used in Placement)
 
         for (int i = 0; i < WIDTH; i++) {
@@ -64,32 +59,19 @@ public class SolverTask extends Task<Void> {
                                 if (frame.canAdd(part, i, j, orient, flststate)) {
                                     // Create new Task
                                     final Positioning positioning = new Positioning(part, i, j, orient, flststate);
-                                    var solverTask = new SolverTask(this.controller, new Placement(this.placement, positioning));
-                                    //Start task if place
-                                    while (tasks.size() >= freeParts.size()) {
-                                        tasks.removeIf(Future::isDone);
-                                        Thread.yield();
-                                    }
-                                    runningTaskCounter.incrementAndGet();
+                                    tasks.add(new SolverTask(this.controller, new Placement(this.placement, positioning)));
                                     createdTaskCounter.incrementAndGet();
-                                    tasks.add(controller.executorService.submit(solverTask));
 
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-        if(runningTaskCounter.decrementAndGet()==0)
-
-    {
-        endSolve = System.currentTimeMillis();
-        System.out.println("Duration :" + (endSolve - startSolve) / 1000.0);
-        Platform.runLater(() -> controller.onRefreshUI());
-        controller.executorService.shutdown();
-    }
+        solverTaskQueue.addAll(tasks);
+        runningTaskCounter.decrementAndGet();
+        if (verbose) System.out.println(runningTaskCounter.get() + " - " + createdTaskCounter.get());
         return null;
-}
+    }
 }
