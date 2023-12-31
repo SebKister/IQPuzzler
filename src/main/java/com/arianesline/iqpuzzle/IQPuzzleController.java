@@ -67,7 +67,7 @@ public class IQPuzzleController implements Initializable {
         currentPlacement = challengePlacements.getFirst();
         currentFrame.loadPlacement(currentPlacement);
         drawParts();
-        drawCurrentFrame();
+        drawFrame();
         solverProgressBar.progressProperty().bind(solverProgress);
         UIUpdateCheckBox.selectedProperty().bindBidirectional(UIUpdateFlag);
     }
@@ -217,7 +217,7 @@ public class IQPuzzleController implements Initializable {
 
     }
 
-    public void drawCurrentFrame() {
+    public void drawFrame() {
         var gc = mainCanvas.getGraphicsContext2D();
         mainCanvas.setScaleY(-1);
         gc.clearRect(0, 0, currentFrame.width * BALLSIZE, currentFrame.height * BALLSIZE);
@@ -232,7 +232,7 @@ public class IQPuzzleController implements Initializable {
             }
     }
 
-    public Canvas drawCurrentFrame(Frame frameArg) {
+    public Canvas drawFrame(Frame frameArg) {
 
         Canvas canvas = new Canvas();
         var partWidth = frameArg.width;
@@ -309,7 +309,7 @@ public class IQPuzzleController implements Initializable {
     public Canvas drawSolutionPlacement(Placement placement) {
         var frameSolution = new Frame(WIDTH, HEIGHT);
         frameSolution.loadPlacement(placement);
-        return drawCurrentFrame(frameSolution);
+        return drawFrame(frameSolution);
     }
 
     public static boolean isUniqueSolution(Placement placement) {
@@ -425,7 +425,7 @@ public class IQPuzzleController implements Initializable {
 
     private void drawCurrentPlacement() {
         currentFrame.loadPlacement(currentPlacement);
-        drawCurrentFrame();
+        drawFrame();
     }
 
     public void onPartSelected() {
@@ -518,6 +518,8 @@ public class IQPuzzleController implements Initializable {
 
     public void onResetChallenge() {
         currentPlacement.positioningList.clear();
+        currentPlacement.unusedParts.clear();
+        currentPlacement.unusedParts.addAll(parts);
         drawCurrentPlacement();
         updateToolPane();
     }
