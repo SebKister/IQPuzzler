@@ -1,14 +1,11 @@
 package com.arianesline.iqpuzzle;
 
-import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -36,16 +33,13 @@ public class IQPuzzleController implements Initializable {
     public static final int HEIGHT = 5;
     private static final double FILLFACTOR = 0.9;
     public Canvas mainCanvas;
-    public FlowPane partsFlowPane;
     public Label messageLabel;
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
     public static final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
     public Label solutionLabel;
-    public FlowPane solutionFlowPane;
+    public ListView<Canvas> solutionFlowPane;
     public ComboBox<Pane> partComboBox;
     public GridPane toolPane;
-    public Button onLoadChallenge;
-    public final static boolean verbose = false;
     public ProgressBar solverProgressBar;
     public CheckBox UIUpdateCheckBox;
     Frame currentFrame;
@@ -56,9 +50,9 @@ public class IQPuzzleController implements Initializable {
     public final static AtomicInteger runningTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger createdTaskCounter = new AtomicInteger(0);
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
-    public static ExecutorService executorService ;
+    public static ExecutorService executorService;
     public static SolverDistributionTask distributionTask;
-    public static Placement currentPlacement = new Placement(0,parts);
+    public static Placement currentPlacement = new Placement(0, parts);
     static long startSolve;
     static long endSolve;
 
@@ -70,16 +64,16 @@ public class IQPuzzleController implements Initializable {
         buildFrame();
         buildParts();
         buildChallenges();
-        currentPlacement = challengePlacements.get(0);
+        currentPlacement = challengePlacements.getFirst();
         currentFrame.loadPlacement(currentPlacement);
         drawParts();
-        drawCurrentFrame();
+        drawFrame();
         solverProgressBar.progressProperty().bind(solverProgress);
         UIUpdateCheckBox.selectedProperty().bindBidirectional(UIUpdateFlag);
     }
 
     private void buildChallenges() {
-        var placement = new Placement(1,parts);
+        var placement = new Placement(1, parts);
 
         placement.addPositioning(new Positioning(parts.get(0), 4, 4, Orientation.LEFT, FlipState.FLIPPED));
         placement.addPositioning(new Positioning(parts.get(4), 1, 1, Orientation.UP, FlipState.FLIPPED));
@@ -223,7 +217,7 @@ public class IQPuzzleController implements Initializable {
 
     }
 
-    public void drawCurrentFrame() {
+    public void drawFrame() {
         var gc = mainCanvas.getGraphicsContext2D();
         mainCanvas.setScaleY(-1);
         gc.clearRect(0, 0, currentFrame.width * BALLSIZE, currentFrame.height * BALLSIZE);
@@ -238,7 +232,7 @@ public class IQPuzzleController implements Initializable {
             }
     }
 
-    public Canvas drawCurrentFrame(Frame frameArg) {
+    public Canvas drawFrame(Frame frameArg) {
 
         Canvas canvas = new Canvas();
         var partWidth = frameArg.width;
@@ -304,8 +298,8 @@ public class IQPuzzleController implements Initializable {
     }
 
     public void displayTasks() {
-        messageLabel.setText("Tasks : "  + createdTaskCounter.get()
-                + " - Duration : " + (((endSolve==0) ? System.currentTimeMillis() : endSolve) - startSolve) / 1000.0);
+        messageLabel.setText("Tasks : " + createdTaskCounter.get()
+                + " - Duration : " + (((endSolve == 0) ? System.currentTimeMillis() : endSolve) - startSolve) / 1000.0);
     }
 
     public void displaySolutionCount() {
@@ -315,7 +309,7 @@ public class IQPuzzleController implements Initializable {
     public Canvas drawSolutionPlacement(Placement placement) {
         var frameSolution = new Frame(WIDTH, HEIGHT);
         frameSolution.loadPlacement(placement);
-        return drawCurrentFrame(frameSolution);
+        return drawFrame(frameSolution);
     }
 
     public static boolean isUniqueSolution(Placement placement) {
@@ -340,7 +334,7 @@ public class IQPuzzleController implements Initializable {
         return true;
     }
 
-    public void onMoveRight(ActionEvent actionEvent) {
+    public void onMoveRight() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -350,7 +344,7 @@ public class IQPuzzleController implements Initializable {
         drawCurrentPlacement();
     }
 
-    public void onMoveUp(ActionEvent actionEvent) {
+    public void onMoveUp() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -361,7 +355,7 @@ public class IQPuzzleController implements Initializable {
 
     }
 
-    public void onMoveDown(ActionEvent actionEvent) {
+    public void onMoveDown() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -371,7 +365,7 @@ public class IQPuzzleController implements Initializable {
         drawCurrentPlacement();
     }
 
-    public void onMoveLeft(ActionEvent actionEvent) {
+    public void onMoveLeft() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -381,7 +375,7 @@ public class IQPuzzleController implements Initializable {
         drawCurrentPlacement();
     }
 
-    public void onRotate(ActionEvent actionEvent) {
+    public void onRotate() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -391,7 +385,7 @@ public class IQPuzzleController implements Initializable {
         drawCurrentPlacement();
     }
 
-    public void onFlip(ActionEvent actionEvent) {
+    public void onFlip() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -401,7 +395,7 @@ public class IQPuzzleController implements Initializable {
         drawCurrentPlacement();
     }
 
-    public void onRemovePart(ActionEvent actionEvent) {
+    public void onRemovePart() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -415,7 +409,7 @@ public class IQPuzzleController implements Initializable {
         updateToolPane();
     }
 
-    public void onAddPart(ActionEvent actionEvent) {
+    public void onAddPart() {
         Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
         if (selectedItem == null) return;
 
@@ -431,10 +425,10 @@ public class IQPuzzleController implements Initializable {
 
     private void drawCurrentPlacement() {
         currentFrame.loadPlacement(currentPlacement);
-        drawCurrentFrame();
+        drawFrame();
     }
 
-    public void onPartSelected(ActionEvent actionEvent) {
+    public void onPartSelected() {
         updateToolPane();
 
     }
@@ -448,7 +442,7 @@ public class IQPuzzleController implements Initializable {
         toolPane.setDisable(!currentPlacement.containsPart(partSelected));
     }
 
-    public void onLoadChallenge(ActionEvent actionEvent) throws IOException {
+    public void onLoadChallenge() {
         FileChooser fileChooser = new FileChooser();
 
         //Set extension filter for text files
@@ -465,10 +459,10 @@ public class IQPuzzleController implements Initializable {
         }
     }
 
-    private void openChallengeFromFile(File file) throws FileNotFoundException {
+    private void openChallengeFromFile(File file) {
         currentPlacement.clear(parts);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file));) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 
             reader.lines().forEach(s -> {
                 var splits = s.split(";");
@@ -485,7 +479,7 @@ public class IQPuzzleController implements Initializable {
         }
     }
 
-    public void onSaveChallenge(ActionEvent actionEvent) throws IOException {
+    public void onSaveChallenge() throws IOException {
         FileChooser fileChooser = new FileChooser();
 
         //Set extension filter for text files
@@ -501,7 +495,7 @@ public class IQPuzzleController implements Initializable {
     }
 
     private void saveChallengeToFile(File file) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file));) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             currentPlacement.positioningList.forEach(positioning -> {
                 try {
                     writer.write(positioning.part.color.toString());
@@ -522,25 +516,26 @@ public class IQPuzzleController implements Initializable {
         }
     }
 
-    public void onResetChallenge(ActionEvent actionEvent) {
+    public void onResetChallenge() {
         currentPlacement.positioningList.clear();
+        currentPlacement.unusedParts.clear();
+        currentPlacement.unusedParts.addAll(parts);
         drawCurrentPlacement();
         updateToolPane();
     }
 
     public void onRefreshUI() {
-        solutionFlowPane.getChildren().clear();
-        solutionPlacements.forEach(placement -> solutionFlowPane.getChildren().add(drawSolutionPlacement(placement)));
+        solutionFlowPane.getItems().clear();
+        solutionPlacements.forEach(placement -> solutionFlowPane.getItems().add(drawSolutionPlacement(placement)));
         displaySolutionCount();
         displayTasks();
     }
 
-    public void onStopSolve(ActionEvent actionEvent) {
+    public void onStopSolve() {
 
         keepAlive.set(false);
         endSolve = System.currentTimeMillis();
-        System.out.println("Duration : " + (endSolve - startSolve) / 1000.0);
         onRefreshUI();
-        executorService.shutdown();
+        if (executorService != null) executorService.shutdown();
     }
 }

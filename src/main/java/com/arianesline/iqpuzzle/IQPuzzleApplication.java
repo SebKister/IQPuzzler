@@ -18,12 +18,14 @@ public class IQPuzzleApplication extends Application {
         stage.setScene(scene);
         stage.show();
     }
+
     @Override
     public void stop() throws Exception {
         super.stop(); //To change body of generated methods, choose Tools | Templates.
-        executorService.shutdownNow();
+        if (executorService != null) executorService.shutdownNow();
 
     }
+
     public static void main(String[] args) {
         launch();
     }
