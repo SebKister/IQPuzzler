@@ -4,15 +4,19 @@ import javafx.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.MAXRUNNINGTASKS;
 import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
+
 
 public class SolverTask extends Task<Void> {
 
     IQPuzzleController controller;
     final Frame frame = new Frame(WIDTH, HEIGHT);
     final List<Placement> tasks = new ArrayList<>();
+    public final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
 
     public SolverTask(IQPuzzleController IQPuzzleController) {
         this.controller = IQPuzzleController;
@@ -21,6 +25,7 @@ public class SolverTask extends Task<Void> {
 
     @Override
     protected Void call() {
+        int counter = 0;
         while (keepAlive.get()) {
             var taskPlacement = solverTaskQueue.pollLast();
 
@@ -68,7 +73,8 @@ public class SolverTask extends Task<Void> {
                         }
                     }
                 }
-                solverTaskQueue.addAll(tasks);
+
+                SolverDistributionTask.workers.get((counter++)%MAXRUNNINGTASKS).solverTaskQueue.addAll(tasks);
             }
             Thread.yield();
         }
@@ -82,13 +88,13 @@ public class SolverTask extends Task<Void> {
         if (frame.balls[0][0] == null && frame.balls[0][1] != null && frame.balls[1][0] != null)
             return false;
 
-        if (frame.balls[WIDTH-1][0] == null && frame.balls[WIDTH-2][0] != null && frame.balls[WIDTH-1][1] != null)
+        if (frame.balls[WIDTH - 1][0] == null && frame.balls[WIDTH - 2][0] != null && frame.balls[WIDTH - 1][1] != null)
             return false;
 
-        if (frame.balls[WIDTH-1][HEIGHT-1] == null && frame.balls[WIDTH-2][HEIGHT-1] != null && frame.balls[WIDTH-1][HEIGHT-2] != null)
+        if (frame.balls[WIDTH - 1][HEIGHT - 1] == null && frame.balls[WIDTH - 2][HEIGHT - 1] != null && frame.balls[WIDTH - 1][HEIGHT - 2] != null)
             return false;
 
-        if (frame.balls[0][HEIGHT-1] == null && frame.balls[1][HEIGHT-1] != null && frame.balls[0][HEIGHT-2] != null)
+        if (frame.balls[0][HEIGHT - 1] == null && frame.balls[1][HEIGHT - 1] != null && frame.balls[0][HEIGHT - 2] != null)
             return false;
 
         for (int i = 1; i < WIDTH - 1; i++) {
