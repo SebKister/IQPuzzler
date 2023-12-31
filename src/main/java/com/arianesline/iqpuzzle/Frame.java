@@ -15,14 +15,13 @@ public class Frame {
         bugPart.balls.add(bugBall);
     }
 
-
     public Frame(int width, int height) {
         this.width = width;
         this.height = height;
         balls = new Ball[width][height];
     }
 
-    public void loadPlacement(Placement challenge) {
+    public void loadPlacement(Placement placement) {
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
@@ -30,7 +29,7 @@ public class Frame {
             }
         }
 
-        challenge.positioningList.forEach(positioning -> {
+        placement.positioningList.forEach(positioning -> {
             positioning.part.balls.forEach(ball -> {
                 int xFactor = (positioning.flipState == FlipState.FLIPPED) ? -1 : 1;
                 int px, py;

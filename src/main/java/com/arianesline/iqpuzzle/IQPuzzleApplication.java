@@ -7,6 +7,8 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+import static com.arianesline.iqpuzzle.IQPuzzleController.executorService;
+
 public class IQPuzzleApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
@@ -16,7 +18,12 @@ public class IQPuzzleApplication extends Application {
         stage.setScene(scene);
         stage.show();
     }
+    @Override
+    public void stop() throws Exception {
+        super.stop(); //To change body of generated methods, choose Tools | Templates.
+        executorService.shutdownNow();
 
+    }
     public static void main(String[] args) {
         launch();
     }
