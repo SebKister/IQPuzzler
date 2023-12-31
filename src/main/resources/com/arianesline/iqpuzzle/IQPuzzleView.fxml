@@ -3,8 +3,10 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -18,9 +20,9 @@
 <AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.arianesline.iqpuzzle.IQPuzzleController">
     <ToolBar prefHeight="40.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <Button mnemonicParsing="false" onAction="#onSolve" text="Solve" />
-        <Label fx:id="messageLabel" />
-        <Label fx:id="solutionLabel" />
+      <Button mnemonicParsing="false" onAction="#onStopSolve" text="Stop" />
       <Button mnemonicParsing="false" onAction="#onRefreshUI" text="Refresh" />
+      <CheckBox fx:id="UIUpdateCheckBox" mnemonicParsing="false" text="UI Update" />
     </ToolBar>
    <HBox alignment="CENTER" layoutY="39.0" prefHeight="107.0" prefWidth="716.0" spacing="10.0">
       <children>
@@ -71,5 +73,14 @@
                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
             </BorderPane.margin></Canvas>
       </top>
+      <bottom>
+         <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <items>
+               <ProgressBar fx:id="solverProgressBar" prefWidth="200.0" progress="0.0" />
+                 <Label fx:id="messageLabel" />
+                 <Label fx:id="solutionLabel" />
+            </items>
+         </ToolBar>
+      </bottom>
    </BorderPane>
 </AnchorPane>

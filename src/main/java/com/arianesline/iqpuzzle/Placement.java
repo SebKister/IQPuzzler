@@ -8,28 +8,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Placement {
     final List<Positioning> positioningList;
+    final List<Part> unusedParts;
     final int id;
 
     final static AtomicInteger counter = new AtomicInteger(1000);
 
-    public Placement(int id) {
+    public Placement(int id,List<Part> parts) {
         this.id = id;
         this.positioningList = new ArrayList<>();
+        this.unusedParts= new ArrayList<>(parts);
     }
 
     public Placement(Placement placementOri, Positioning positioningAdded) {
+
         this.id = counter.incrementAndGet();
 
-        this.positioningList = new ArrayList<>();
-        placementOri.positioningList.forEach(positioning -> this.positioningList.add(new Positioning(positioning.part,
-                positioning.posx, positioning.posy, positioning.orientation, positioning.flipState)));
-        if (positioningAdded != null)
-            this.positioningList.add(positioningAdded);
+        this.positioningList = new ArrayList<>(placementOri.positioningList);
+        this.unusedParts= new ArrayList<>(placementOri.unusedParts);
 
+        if (positioningAdded != null) {
+            this.positioningList.add(positioningAdded);
+            this.unusedParts.remove(positioningAdded.part);
+        }
     }
 
     public void addPositioning(Positioning positioning) {
         positioningList.add(positioning);
+        unusedParts.remove(positioning.part);
     }
 
 
@@ -39,7 +44,10 @@ public class Placement {
 
     public void removePart(Part partSelected) {
         var found = positioningList.stream().filter(positioning -> positioning.part == partSelected).findAny();
-        found.ifPresent(positioningList::remove);
+        found.ifPresent(o -> {
+            positioningList.remove(o);
+            unusedParts.add(o.part);
+        });
     }
 
     public void movePartLeft(Part partSelected) {
@@ -71,5 +79,11 @@ public class Placement {
         var found = positioningList.stream().filter(positioning -> positioning.part == partSelected).findAny();
         found.ifPresent(positioning -> positioning.flipState = FlipState.values()[(positioning.flipState.ordinal() + 1) % FlipState.values().length]);
 
+    }
+
+    public void clear(List<Part> parts) {
+        this.positioningList.clear();
+        this.unusedParts.clear();
+        this.unusedParts.addAll (parts);
     }
 }

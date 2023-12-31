@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
 
 public class SolverDistributionTask extends Task<Void> {
-    private static final int MAXRUNNINGTASKS = Runtime.getRuntime().availableProcessors();
+    private static final int MAXRUNNINGTASKS = Runtime.getRuntime().availableProcessors()-2;
     IQPuzzleController controller;
     static AtomicBoolean keepAlive = new AtomicBoolean(false);
 
@@ -26,13 +26,23 @@ public class SolverDistributionTask extends Task<Void> {
             executorService.submit(worker);
         }
 
-        Thread.sleep(10);
-        while (!solverTaskQueue.isEmpty()) {
+        Thread.sleep(100);
+
+        int size = solverTaskQueue.size();
+        int maxSize = size;
+
+        while (size > 0) {
             Thread.sleep(10);
+            size = solverTaskQueue.size();
+            if (size > maxSize) maxSize = size;
+            if(UIUpdateFlag.get()){
+                solverProgress.set(1.0 - (double) size / maxSize);
+                Platform.runLater(() -> controller.onRefreshUI());
+            }
         }
+
         keepAlive.set(false);
         endSolve = System.currentTimeMillis();
-        System.out.println("Duration : " + (endSolve - startSolve) / 1000.0);
         Platform.runLater(() -> controller.onRefreshUI());
         executorService.shutdown();
         return null;

@@ -27,10 +27,8 @@ public class SolverTask extends Task<Void> {
             var taskPlacement = solverTaskQueue.pollLast();
 
             if (taskPlacement != null) {
-                var freeParts = IQPuzzleController.parts.stream()
-                        .filter(part -> taskPlacement.positioningList.stream()
-                                .map(positioning -> positioning.part)
-                                .noneMatch(part1 -> part1 == part)).toList();
+                var freeParts = getFreeParts(taskPlacement);
+
 
                 //Test for solution found
                 if (freeParts.isEmpty()) {
@@ -39,7 +37,6 @@ public class SolverTask extends Task<Void> {
                         if (isUniqueSolution(taskPlacement)) {
                             solutionPlacements.add(taskPlacement);
                             solutionCounter.incrementAndGet();
-                          //  System.out.println(solutionCounter.get() + "Solution found : " + createdTaskCounter.get());
                         }
                     }
                     continue;
@@ -72,10 +69,14 @@ public class SolverTask extends Task<Void> {
                     }
                 }
                 solverTaskQueue.addAll(tasks);
-                // System.out.println(createdTaskCounter.get());
             }
             Thread.yield();
         }
         return null;
+    }
+
+    private static List<Part> getFreeParts(Placement taskPlacement) {
+        return taskPlacement.unusedParts;
+
     }
 }
