@@ -7,9 +7,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 
 import java.io.*;
 import java.net.URL;
@@ -37,7 +37,7 @@ public class IQPuzzleController implements Initializable {
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
     public Label solutionLabel;
     public ListView<Canvas> solutionFlowPane;
-    public ComboBox<Pane> partComboBox;
+    public ComboBox<Part> partComboBox;
     public GridPane toolPane;
     public ProgressBar solverProgressBar;
     public CheckBox UIUpdateCheckBox;
@@ -47,11 +47,10 @@ public class IQPuzzleController implements Initializable {
     final static List<Placement> challengePlacements = new ArrayList<>();
 
 
-
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
     public static ExecutorService executorService;
     public static SolverDistributionTask distributionTask;
-    public static Placement currentPlacement = new Placement( parts);
+    public static Placement currentPlacement = new Placement(parts);
     static long startSolve;
     static long endSolve;
 
@@ -60,6 +59,37 @@ public class IQPuzzleController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        Callback<ListView<Part>, ListCell<Part>> callback = new Callback<>() {
+            @Override
+            public ListCell<Part> call(ListView<Part> p) {
+                return new ListCell<>() {
+                    private final Canvas canvas;
+
+                    {
+                        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                        canvas = new Canvas();
+                        canvas.setWidth(4 * BALLSIZE);
+                        canvas.setHeight(4 * BALLSIZE);
+                    }
+
+                    @Override
+                    protected void updateItem(Part item, boolean empty) {
+                        super.updateItem(item, empty);
+
+                        if (item == null || empty) {
+                            setGraphic(null);
+                        } else {
+                            drawPart(canvas, item);
+                            setGraphic(canvas);
+                        }
+                    }
+                };
+            }
+        };
+        partComboBox.setButtonCell(callback.call(null));
+        partComboBox.setCellFactory(callback);
+
+
         buildFrame();
         buildParts();
         buildChallenges();
@@ -69,10 +99,13 @@ public class IQPuzzleController implements Initializable {
         drawFrame();
         solverProgressBar.progressProperty().bind(solverProgress);
         UIUpdateCheckBox.selectedProperty().bindBidirectional(UIUpdateFlag);
+
+
+
     }
 
     private void buildChallenges() {
-        var placement = new Placement( parts);
+        var placement = new Placement(parts);
 
         placement.addPositioning(new Positioning(parts.get(0), 4, 4, Orientation.LEFT, FlipState.FLIPPED));
         placement.addPositioning(new Positioning(parts.get(4), 1, 1, Orientation.UP, FlipState.FLIPPED));
@@ -90,25 +123,23 @@ public class IQPuzzleController implements Initializable {
 
     private void drawParts() {
         partComboBox.getItems().clear();
-        parts.forEach(part -> {
-            Pane e = new Pane(drawPart(part));
-            e.setUserData(part);
-            partComboBox.getItems().add(e);
-        });
+       partComboBox.getItems().addAll(parts);
     }
 
-    private Canvas drawPart(Part part) {
-        Canvas canvas = new Canvas();
+    private void drawPart(Canvas canvas,Part part) {
+
         var partWidth = part.balls.stream().mapToInt(ball -> ball.rpx).max().orElse(0) - part.balls.stream().mapToInt(ball -> ball.rpx).min().orElse(0) + 1;
         var partHeight = part.balls.stream().mapToInt(ball -> ball.rpy).max().orElse(0) - part.balls.stream().mapToInt(ball -> ball.rpy).min().orElse(0) + 1;
 
-        canvas.setWidth(partWidth * BALLSIZE + BALLSIZE);
-        canvas.setHeight(partHeight * BALLSIZE + BALLSIZE);
+        canvas.setWidth(partWidth * BALLSIZE );
+        canvas.setHeight(partHeight * BALLSIZE);
         var gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         part.balls.forEach(ball -> drawBall(ball, gc));
         canvas.setScaleY(-1);
-        return canvas;
+
     }
+
 
     private void buildParts() {
         var part = new Part(Color.YELLOW);
@@ -288,7 +319,7 @@ public class IQPuzzleController implements Initializable {
         solutionPlacements.clear();
         solutionCounter.set(0);
         executorService = Executors.newCachedThreadPool();
-        distributionTask = new SolverDistributionTask(this,currentPlacement);
+        distributionTask = new SolverDistributionTask(this, currentPlacement);
         executorService.submit(distributionTask);
     }
 
@@ -325,77 +356,55 @@ public class IQPuzzleController implements Initializable {
                     return false;
             }
         }
-
         return true;
     }
 
     public void onMoveRight() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.movePartRight(partSelected);
         drawCurrentPlacement();
     }
 
     public void onMoveUp() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.movePartUp(partSelected);
         drawCurrentPlacement();
 
     }
 
     public void onMoveDown() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.movePartDown(partSelected);
         drawCurrentPlacement();
     }
 
     public void onMoveLeft() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.movePartLeft(partSelected);
         drawCurrentPlacement();
     }
 
     public void onRotate() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.rotatePart(partSelected);
         drawCurrentPlacement();
     }
 
     public void onFlip() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         currentPlacement.flipPart(partSelected);
         drawCurrentPlacement();
     }
 
     public void onRemovePart() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         if (!currentPlacement.containsPart(partSelected)) return;
 
         currentPlacement.removePart(partSelected);
@@ -405,11 +414,8 @@ public class IQPuzzleController implements Initializable {
     }
 
     public void onAddPart() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
-
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
+        if (partSelected == null) return;
         if (currentPlacement.containsPart(partSelected)) return;
 
         currentPlacement.addPositioning(new Positioning(partSelected, 0, 0, Orientation.UP, FlipState.FLAT));
@@ -429,10 +435,7 @@ public class IQPuzzleController implements Initializable {
     }
 
     private void updateToolPane() {
-        Pane selectedItem = partComboBox.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
-
-        var partSelected = (Part) selectedItem.getUserData();
+        var partSelected = partComboBox.getSelectionModel().getSelectedItem();
 
         toolPane.setDisable(!currentPlacement.containsPart(partSelected));
     }
