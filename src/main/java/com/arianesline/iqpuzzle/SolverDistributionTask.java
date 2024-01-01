@@ -25,6 +25,7 @@ public class SolverDistributionTask extends Task<Void> {
         this.initialPlacement = challenge;
     }
 
+    @SuppressWarnings("BusyWait")
     @Override
     protected Void call() throws Exception {
         workers.clear();
@@ -38,7 +39,7 @@ public class SolverDistributionTask extends Task<Void> {
             workers.add(worker);
         }
 
-        while(freeWorkers.isEmpty()) Thread.yield();
+        while (freeWorkers.isEmpty()) Thread.yield();
 
         freeWorkers.poll().solverTaskQueue.add(initialPlacement);
 
@@ -47,7 +48,7 @@ public class SolverDistributionTask extends Task<Void> {
         int size = 1;
         int maxSize = size;
 
-        while (freeWorkers.size()<MAXRUNNINGTASKS) {
+        while (workers.stream().anyMatch(solverTask -> !solverTask.solverTaskQueue.isEmpty())) {
             Thread.sleep(10);
 
             if (UIUpdateFlag.get()) {

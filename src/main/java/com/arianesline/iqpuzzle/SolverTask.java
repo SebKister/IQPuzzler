@@ -23,7 +23,9 @@ public class SolverTask extends Task<Void> {
 
     @Override
     protected Void call() {
+
         createdTaskCounter = 0;
+
         while (keepAlive.get()) {
             var taskPlacement = solverTaskQueue.pollLast();
 
@@ -44,8 +46,8 @@ public class SolverTask extends Task<Void> {
 
                 frame.loadPlacement(taskPlacement);
                 placements.clear();
-                //Go over all available parts ( not used in Placement)
 
+                //Go over all available parts ( not used in Placement)
                 if (!checkHasFuture(frame)) continue;
 
                 for (int i = 0; i < WIDTH; i++) {
@@ -58,7 +60,6 @@ public class SolverTask extends Task<Void> {
                                 //Go over all flip states
                                 for (FlipState flststate : FLIP_STATES) {
                                     for (Part part : freeParts) {
-
                                         if (frame.canAdd(part, i, j, orient, flststate)) {
                                             // Create new Task
                                             final Positioning positioning = new Positioning(part, i, j, orient, flststate);
@@ -71,6 +72,7 @@ public class SolverTask extends Task<Void> {
                         }
                     }
                 }
+
                 if (!SolverDistributionTask.freeWorkers.isEmpty()) {
                     SolverTask poll = SolverDistributionTask.freeWorkers.poll();
                     if (poll != null)
