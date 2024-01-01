@@ -51,7 +51,7 @@ public class IQPuzzleController implements Initializable {
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
     public static ExecutorService executorService;
     public static SolverDistributionTask distributionTask;
-    public static Placement currentPlacement = new Placement(0, parts);
+    public static Placement currentPlacement = new Placement( parts);
     static long startSolve;
     static long endSolve;
 
@@ -72,7 +72,7 @@ public class IQPuzzleController implements Initializable {
     }
 
     private void buildChallenges() {
-        var placement = new Placement(1, parts);
+        var placement = new Placement( parts);
 
         placement.addPositioning(new Positioning(parts.get(0), 4, 4, Orientation.LEFT, FlipState.FLIPPED));
         placement.addPositioning(new Positioning(parts.get(4), 1, 1, Orientation.UP, FlipState.FLIPPED));

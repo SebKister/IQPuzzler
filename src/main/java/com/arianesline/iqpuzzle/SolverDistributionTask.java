@@ -30,7 +30,7 @@ public class SolverDistributionTask extends Task<Void> {
         //Create worker tasks
 
         for (int i = 0; i < MAXRUNNINGTASKS; i++) {
-            var worker = new SolverTask(controller);
+            var worker = new SolverTask();
             executorService.submit(worker);
             workers.add(worker);
         }

@@ -13,17 +13,15 @@ import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
 
 public class SolverTask extends Task<Void> {
 
-    IQPuzzleController controller;
+    public static final FlipState[] FLIP_STATES = FlipState.values();
+    public static final Orientation[] ORIENTATIONS = Orientation.values();
     final Frame frame = new Frame(WIDTH, HEIGHT);
     final List<Placement> placements = new ArrayList<>();
     public final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
 
     public long createdTaskCounter;
 
-    public SolverTask(IQPuzzleController IQPuzzleController) {
-        this.controller = IQPuzzleController;
 
-    }
 
     @Override
     protected Void call() {
@@ -33,8 +31,7 @@ public class SolverTask extends Task<Void> {
             var taskPlacement = solverTaskQueue.pollLast();
 
             if (taskPlacement != null) {
-                var freeParts = getFreeParts(taskPlacement);
-
+                var freeParts = taskPlacement.unusedParts;
 
                 //Test for solution found
                 if (freeParts.isEmpty()) {
@@ -59,9 +56,10 @@ public class SolverTask extends Task<Void> {
                         // Go over all empty cell
                         if (frame.balls[i][j] == null) {
                             //Go over all rotation states
-                            for (Orientation orient : Orientation.values()) {
+
+                            for (Orientation orient : ORIENTATIONS) {
                                 //Go over all flip states
-                                for (FlipState flststate : FlipState.values()) {
+                                for (FlipState flststate : FLIP_STATES) {
                                     for (Part part : freeParts) {
 
                                         if (frame.canAdd(part, i, j, orient, flststate)) {
@@ -78,7 +76,6 @@ public class SolverTask extends Task<Void> {
                 }
                 SolverDistributionTask.workers.get((counter++) % MAXRUNNINGTASKS).solverTaskQueue.addAll(placements);
             }
-          //  Thread.yield();
         }
         return null;
     }
@@ -125,10 +122,5 @@ public class SolverTask extends Task<Void> {
         }
 
         return true;
-    }
-
-    private static List<Part> getFreeParts(Placement taskPlacement) {
-        return taskPlacement.unusedParts;
-
     }
 }

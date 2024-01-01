@@ -1,30 +1,23 @@
 package com.arianesline.iqpuzzle;
 
 
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Placement {
     final List<Positioning> positioningList;
     final List<Part> unusedParts;
-    final int id;
 
-    final static AtomicInteger counter = new AtomicInteger(1000);
 
-    public Placement(int id,List<Part> parts) {
-        this.id = id;
+    public Placement( List<Part> parts) {
         this.positioningList = new ArrayList<>();
-        this.unusedParts= new ArrayList<>(parts);
+        this.unusedParts = new ArrayList<>(parts);
     }
 
     public Placement(Placement placementOri, Positioning positioningAdded) {
 
-        this.id = counter.incrementAndGet();
-
         this.positioningList = new ArrayList<>(placementOri.positioningList);
-        this.unusedParts= new ArrayList<>(placementOri.unusedParts);
+        this.unusedParts = new ArrayList<>(placementOri.unusedParts);
 
         if (positioningAdded != null) {
             this.positioningList.add(positioningAdded);
@@ -84,6 +77,6 @@ public class Placement {
     public void clear(List<Part> parts) {
         this.positioningList.clear();
         this.unusedParts.clear();
-        this.unusedParts.addAll (parts);
+        this.unusedParts.addAll(parts);
     }
 }
