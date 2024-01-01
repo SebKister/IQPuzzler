@@ -5,6 +5,7 @@ import javafx.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
@@ -17,15 +18,18 @@ public class SolverDistributionTask extends Task<Void> {
     Placement initialPlacement;
 
     public static List<SolverTask> workers = new ArrayList<>();
+    public static final ConcurrentLinkedQueue<SolverTask> freeWorkers = new ConcurrentLinkedQueue<>();
 
     public SolverDistributionTask(IQPuzzleController iqPuzzleController, Placement challenge) {
         controller = iqPuzzleController;
         this.initialPlacement = challenge;
     }
 
+    @SuppressWarnings("BusyWait")
     @Override
     protected Void call() throws Exception {
         workers.clear();
+        freeWorkers.clear();
         keepAlive.set(true);
         //Create worker tasks
 
@@ -35,19 +39,21 @@ public class SolverDistributionTask extends Task<Void> {
             workers.add(worker);
         }
 
-        workers.getFirst().solverTaskQueue.add(initialPlacement);
+        while (freeWorkers.isEmpty()) Thread.yield();
+
+        freeWorkers.poll().solverTaskQueue.add(initialPlacement);
 
         Thread.sleep(100);
 
-        int size =1;
+        int size = 1;
         int maxSize = size;
 
-        while (size > 0) {
+        while (workers.stream().anyMatch(solverTask -> !solverTask.solverTaskQueue.isEmpty())) {
             Thread.sleep(10);
 
-            size = workers.stream().mapToInt(value -> value.solverTaskQueue.size()).sum();
-            if (size > maxSize) maxSize = size;
             if (UIUpdateFlag.get()) {
+                size = workers.stream().mapToInt(value -> value.solverTaskQueue.size()).sum();
+                if (size > maxSize) maxSize = size;
                 solverProgress.set(1.0 - (double) size / maxSize);
                 Platform.runLater(() -> controller.onRefreshUI());
             }
