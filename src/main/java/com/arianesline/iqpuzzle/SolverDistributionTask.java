@@ -47,9 +47,13 @@ public class SolverDistributionTask extends Task<Void> {
 
         int size = 1;
         int maxSize = size;
-
+        int duration = 10;
+        int counter = 0;
         while (workers.stream().anyMatch(solverTask -> !solverTask.solverTaskQueue.isEmpty())) {
-            Thread.sleep(10);
+
+            Thread.sleep(duration);
+            counter++;
+            if(counter>500) duration=1000;
 
             if (UIUpdateFlag.get()) {
                 size = workers.stream().mapToInt(solverTask -> solverTask.solverTaskQueue.size()).sum();
