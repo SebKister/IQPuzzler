@@ -13,10 +13,7 @@ import javafx.util.Callback;
 
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,7 +41,7 @@ public class IQPuzzleController implements Initializable {
     Frame currentFrame;
 
     final static List<Part> parts = new ArrayList<>();
-    final static List<Placement> challengePlacements = new ArrayList<>();
+    final static Queue<Placement> challengePlacements = new ArrayDeque<>();
 
 
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
@@ -93,14 +90,12 @@ public class IQPuzzleController implements Initializable {
         buildFrame();
         buildParts();
         buildChallenges();
-        currentPlacement = challengePlacements.getFirst();
+        currentPlacement = challengePlacements.poll();
         currentFrame.loadPlacement(currentPlacement);
         drawParts();
         drawFrame();
         solverProgressBar.progressProperty().bind(solverProgress);
         UIUpdateCheckBox.selectedProperty().bindBidirectional(UIUpdateFlag);
-
-
 
     }
 
@@ -118,20 +113,19 @@ public class IQPuzzleController implements Initializable {
         //   placement.addPositioning(new Positioning(parts.get(1), 6, 4, Orientation.RIGHT, FlipState.FLAT));
         challengePlacements.add(placement);
 
-
     }
 
     private void drawParts() {
         partComboBox.getItems().clear();
-       partComboBox.getItems().addAll(parts);
+        partComboBox.getItems().addAll(parts);
     }
 
-    private void drawPart(Canvas canvas,Part part) {
+    private void drawPart(Canvas canvas, Part part) {
 
         var partWidth = part.balls.stream().mapToInt(ball -> ball.rpx).max().orElse(0) - part.balls.stream().mapToInt(ball -> ball.rpx).min().orElse(0) + 1;
         var partHeight = part.balls.stream().mapToInt(ball -> ball.rpy).max().orElse(0) - part.balls.stream().mapToInt(ball -> ball.rpy).min().orElse(0) + 1;
 
-        canvas.setWidth(partWidth * BALLSIZE );
+        canvas.setWidth(partWidth * BALLSIZE);
         canvas.setHeight(partHeight * BALLSIZE);
         var gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -142,6 +136,8 @@ public class IQPuzzleController implements Initializable {
 
 
     private void buildParts() {
+
+        //1
         var part = new Part(Color.YELLOW);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -150,7 +146,7 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 1));
 
         parts.add(part);
-
+        //2
         part = new Part(Color.DARKBLUE);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -158,7 +154,7 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 0));
 
         parts.add(part);
-
+        //3
         part = new Part(Color.ORANGE);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -167,15 +163,16 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 2));
 
         parts.add(part);
-
+        //4
         part = new Part(Color.SEAGREEN);
+        part.noFlip=true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 0, 2));
         part.balls.add(new Ball(part, 1, 1));
 
         parts.add(part);
-
+        //5
         part = new Part(Color.PINK);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -184,7 +181,7 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 3));
 
         parts.add(part);
-
+        //6
         part = new Part(Color.DARKRED);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -192,8 +189,9 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 2));
 
         parts.add(part);
-
+        //7
         part = new Part(Color.DARKVIOLET);
+        part.noFlip=true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
@@ -201,8 +199,9 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 2, 2));
 
         parts.add(part);
-
+        //8
         part = new Part(Color.LIGHTGREEN);
+        part.noFlip=true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
@@ -210,15 +209,17 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 2, 0));
 
         parts.add(part);
-
+        //9
         part = new Part(Color.LIGHTBLUE);
+        part.noFlip=true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
 
         parts.add(part);
-
+        //10
         part = new Part(Color.BLUE);
+        part.noFlip=true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 0, 2));
@@ -226,7 +227,7 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 2, 2));
 
         parts.add(part);
-
+        //11
         part = new Part(Color.ORANGERED);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
@@ -235,7 +236,7 @@ public class IQPuzzleController implements Initializable {
         part.balls.add(new Ball(part, 1, 3));
 
         parts.add(part);
-
+        //12
         part = new Part(Color.AQUAMARINE);
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));

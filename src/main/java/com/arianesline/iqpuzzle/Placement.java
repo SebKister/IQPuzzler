@@ -1,23 +1,24 @@
 package com.arianesline.iqpuzzle;
 
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 
 public class Placement {
-    final List<Positioning> positioningList;
-    final List<Part> unusedParts;
+    final Queue<Positioning> positioningList;
+    final Queue<Part> unusedParts;
 
 
     public Placement( List<Part> parts) {
-        this.positioningList = new ArrayList<>();
-        this.unusedParts = new ArrayList<>(parts);
+        this.positioningList = new ArrayDeque<>();
+        this.unusedParts = new ArrayDeque<>(parts);
     }
 
     public Placement(Placement placementOri, Positioning positioningAdded) {
 
-        this.positioningList = new ArrayList<>(placementOri.positioningList);
-        this.unusedParts = new ArrayList<>(placementOri.unusedParts);
+        this.positioningList = new ArrayDeque<>(placementOri.positioningList);
+        this.unusedParts = new ArrayDeque<>(placementOri.unusedParts);
 
         if (positioningAdded != null) {
             this.positioningList.add(positioningAdded);

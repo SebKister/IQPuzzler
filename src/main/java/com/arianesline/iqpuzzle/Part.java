@@ -2,17 +2,17 @@ package com.arianesline.iqpuzzle;
 
 import javafx.scene.paint.Color;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class Part {
-    final List<Ball> balls;
+    final Queue<Ball> balls;
     final Color color;
-
+    boolean noFlip = false;
 
     public Part(Color color) {
 
         this.color = color;
-        balls = new ArrayList<>();
+        balls = new ArrayDeque<>();
     }
 }

@@ -12,7 +12,6 @@ import static com.arianesline.iqpuzzle.SolverDistributionTask.*;
 
 public class SolverTask extends Task<Void> {
 
-    public static final FlipState[] FLIP_STATES = FlipState.values();
     public static final Orientation[] ORIENTATIONS = Orientation.values();
     final Frame frame = new Frame(WIDTH, HEIGHT);
     final List<Placement> placements = new ArrayList<>();
@@ -58,14 +57,21 @@ public class SolverTask extends Task<Void> {
 
                             for (Orientation orient : ORIENTATIONS) {
                                 //Go over all flip states
-                                for (FlipState flststate : FLIP_STATES) {
-                                    for (Part part : freeParts) {
-                                        if (frame.canAdd(part, i, j, orient, flststate)) {
-                                            // Create new Task
-                                            final Positioning positioning = new Positioning(part, i, j, orient, flststate);
-                                            placements.add(new Placement(taskPlacement, positioning));
-                                            createdTaskCounter++;
-                                        }
+
+                                for (Part part : freeParts) {
+
+                                    if (frame.canAdd(part, i, j, orient, FlipState.FLAT)) {
+                                        // Create new Task
+                                        final Positioning positioning = new Positioning(part, i, j, orient, FlipState.FLAT);
+                                        placements.add(new Placement(taskPlacement, positioning));
+                                        createdTaskCounter++;
+                                    }
+
+                                    if ( frame.canAdd(part, i, j, orient, FlipState.FLIPPED)) {
+                                        // Create new Task
+                                        final Positioning positioning = new Positioning(part, i, j, orient, FlipState.FLIPPED);
+                                        placements.add(new Placement(taskPlacement, positioning));
+                                        createdTaskCounter++;
                                     }
                                 }
                             }
