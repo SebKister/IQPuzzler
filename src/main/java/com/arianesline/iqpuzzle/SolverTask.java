@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
-import static com.arianesline.iqpuzzle.SolverDistributionTask.MAXRUNNINGTASKS;
-import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.*;
 
 
 public class SolverTask extends Task<Void> {
@@ -22,10 +21,8 @@ public class SolverTask extends Task<Void> {
     public long createdTaskCounter;
 
 
-
     @Override
     protected Void call() {
-        int counter = 0;
         createdTaskCounter = 0;
         while (keepAlive.get()) {
             var taskPlacement = solverTaskQueue.pollLast();
@@ -74,7 +71,16 @@ public class SolverTask extends Task<Void> {
                         }
                     }
                 }
-                SolverDistributionTask.workers.get((counter++) % MAXRUNNINGTASKS).solverTaskQueue.addAll(placements);
+                if (!SolverDistributionTask.freeWorkers.isEmpty()) {
+                    SolverTask poll = SolverDistributionTask.freeWorkers.poll();
+                    if (poll != null)
+                        poll.solverTaskQueue.addAll(placements);
+                    else solverTaskQueue.addAll(placements);
+                } else
+                    solverTaskQueue.addAll(placements);
+            } else {
+                if (!freeWorkers.contains(this))
+                    freeWorkers.add(this);
             }
         }
         return null;
@@ -83,6 +89,7 @@ public class SolverTask extends Task<Void> {
     private boolean checkHasFuture(Frame frame) {
 
         // Check for condition that makes future impossible
+        // No isolated single ball free
 
         if (frame.balls[0][0] == null && frame.balls[0][1] != null && frame.balls[1][0] != null)
             return false;
@@ -100,8 +107,6 @@ public class SolverTask extends Task<Void> {
             for (int j = 1; j < HEIGHT - 1; j++) {
                 if (frame.balls[i][j] == null && frame.balls[i - 1][j] != null && frame.balls[i + 1][j] != null && frame.balls[i][j - 1] != null && frame.balls[i][j + 1] != null) {
                     return false;
-
-
                 }
             }
         }

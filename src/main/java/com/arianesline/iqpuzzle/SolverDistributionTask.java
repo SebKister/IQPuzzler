@@ -5,6 +5,7 @@ import javafx.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
@@ -17,6 +18,7 @@ public class SolverDistributionTask extends Task<Void> {
     Placement initialPlacement;
 
     public static List<SolverTask> workers = new ArrayList<>();
+    public static final ConcurrentLinkedQueue<SolverTask> freeWorkers = new ConcurrentLinkedQueue<>();
 
     public SolverDistributionTask(IQPuzzleController iqPuzzleController, Placement challenge) {
         controller = iqPuzzleController;
@@ -26,6 +28,7 @@ public class SolverDistributionTask extends Task<Void> {
     @Override
     protected Void call() throws Exception {
         workers.clear();
+        freeWorkers.clear();
         keepAlive.set(true);
         //Create worker tasks
 
@@ -35,11 +38,13 @@ public class SolverDistributionTask extends Task<Void> {
             workers.add(worker);
         }
 
-        workers.getFirst().solverTaskQueue.add(initialPlacement);
+        while(freeWorkers.isEmpty()) Thread.yield();
+
+        freeWorkers.poll().solverTaskQueue.add(initialPlacement);
 
         Thread.sleep(100);
 
-        int size =1;
+        int size = 1;
         int maxSize = size;
 
         while (size > 0) {
