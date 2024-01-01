@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.arianesline.iqpuzzle.Frame.bugBall;
 import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.workers;
 
 public class IQPuzzleController implements Initializable {
 
@@ -35,7 +35,6 @@ public class IQPuzzleController implements Initializable {
     public Canvas mainCanvas;
     public Label messageLabel;
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
-    public static final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
     public Label solutionLabel;
     public ListView<Canvas> solutionFlowPane;
     public ComboBox<Pane> partComboBox;
@@ -47,8 +46,8 @@ public class IQPuzzleController implements Initializable {
     final static List<Part> parts = new ArrayList<>();
     final static List<Placement> challengePlacements = new ArrayList<>();
 
-    public final static AtomicInteger runningTaskCounter = new AtomicInteger(0);
-    public final static AtomicInteger createdTaskCounter = new AtomicInteger(0);
+
+
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
     public static ExecutorService executorService;
     public static SolverDistributionTask distributionTask;
@@ -287,18 +286,14 @@ public class IQPuzzleController implements Initializable {
         startSolve = System.currentTimeMillis();
         endSolve = 0;
         solutionPlacements.clear();
-        runningTaskCounter.set(0);
-        createdTaskCounter.set(0);
         solutionCounter.set(0);
-        solverTaskQueue.add(currentPlacement);
-        createdTaskCounter.incrementAndGet();
         executorService = Executors.newCachedThreadPool();
-        distributionTask = new SolverDistributionTask(this);
+        distributionTask = new SolverDistributionTask(this,currentPlacement);
         executorService.submit(distributionTask);
     }
 
     public void displayTasks() {
-        messageLabel.setText("Tasks : " + createdTaskCounter.get()
+        messageLabel.setText("Tasks : " + workers.stream().mapToLong(solverTask -> solverTask.createdTaskCounter).sum()
                 + " - Duration : " + (((endSolve == 0) ? System.currentTimeMillis() : endSolve) - startSolve) / 1000.0);
     }
 

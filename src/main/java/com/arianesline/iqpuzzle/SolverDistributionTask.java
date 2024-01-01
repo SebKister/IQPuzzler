@@ -3,39 +3,51 @@ package com.arianesline.iqpuzzle;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
 
 public class SolverDistributionTask extends Task<Void> {
-    private static final int MAXRUNNINGTASKS = Runtime.getRuntime().availableProcessors()-2;
+    public static final int MAXRUNNINGTASKS = Runtime.getRuntime().availableProcessors() - 2;
     IQPuzzleController controller;
     static AtomicBoolean keepAlive = new AtomicBoolean(false);
 
-    public SolverDistributionTask(IQPuzzleController iqPuzzleController) {
+    Placement initialPlacement;
+
+    public static List<SolverTask> workers = new ArrayList<>();
+
+    public SolverDistributionTask(IQPuzzleController iqPuzzleController, Placement challenge) {
         controller = iqPuzzleController;
+        this.initialPlacement = challenge;
     }
 
     @Override
     protected Void call() throws Exception {
-
+        workers.clear();
         keepAlive.set(true);
         //Create worker tasks
+
         for (int i = 0; i < MAXRUNNINGTASKS; i++) {
             var worker = new SolverTask(controller);
             executorService.submit(worker);
+            workers.add(worker);
         }
+
+        workers.getFirst().solverTaskQueue.add(initialPlacement);
 
         Thread.sleep(100);
 
-        int size = solverTaskQueue.size();
+        int size =1;
         int maxSize = size;
 
         while (size > 0) {
             Thread.sleep(10);
-            size = solverTaskQueue.size();
+
+            size = workers.stream().mapToInt(value -> value.solverTaskQueue.size()).sum();
             if (size > maxSize) maxSize = size;
-            if(UIUpdateFlag.get()){
+            if (UIUpdateFlag.get()) {
                 solverProgress.set(1.0 - (double) size / maxSize);
                 Platform.runLater(() -> controller.onRefreshUI());
             }

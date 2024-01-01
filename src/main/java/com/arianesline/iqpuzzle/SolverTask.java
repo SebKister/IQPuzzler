@@ -4,15 +4,21 @@ import javafx.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.MAXRUNNINGTASKS;
 import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
+
 
 public class SolverTask extends Task<Void> {
 
     IQPuzzleController controller;
     final Frame frame = new Frame(WIDTH, HEIGHT);
-    final List<Placement> tasks = new ArrayList<>();
+    final List<Placement> placements = new ArrayList<>();
+    public final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
+
+    public long createdTaskCounter;
 
     public SolverTask(IQPuzzleController IQPuzzleController) {
         this.controller = IQPuzzleController;
@@ -21,6 +27,8 @@ public class SolverTask extends Task<Void> {
 
     @Override
     protected Void call() {
+        int counter = 0;
+        createdTaskCounter = 0;
         while (keepAlive.get()) {
             var taskPlacement = solverTaskQueue.pollLast();
 
@@ -41,7 +49,7 @@ public class SolverTask extends Task<Void> {
                 }
 
                 frame.loadPlacement(taskPlacement);
-                tasks.clear();
+                placements.clear();
                 //Go over all available parts ( not used in Placement)
 
                 if (!checkHasFuture(frame)) continue;
@@ -59,8 +67,8 @@ public class SolverTask extends Task<Void> {
                                         if (frame.canAdd(part, i, j, orient, flststate)) {
                                             // Create new Task
                                             final Positioning positioning = new Positioning(part, i, j, orient, flststate);
-                                            tasks.add(new Placement(taskPlacement, positioning));
-                                            createdTaskCounter.incrementAndGet();
+                                            placements.add(new Placement(taskPlacement, positioning));
+                                            createdTaskCounter++;
                                         }
                                     }
                                 }
@@ -68,9 +76,9 @@ public class SolverTask extends Task<Void> {
                         }
                     }
                 }
-                solverTaskQueue.addAll(tasks);
+                SolverDistributionTask.workers.get((counter++) % MAXRUNNINGTASKS).solverTaskQueue.addAll(placements);
             }
-            Thread.yield();
+          //  Thread.yield();
         }
         return null;
     }
@@ -82,13 +90,13 @@ public class SolverTask extends Task<Void> {
         if (frame.balls[0][0] == null && frame.balls[0][1] != null && frame.balls[1][0] != null)
             return false;
 
-        if (frame.balls[WIDTH-1][0] == null && frame.balls[WIDTH-2][0] != null && frame.balls[WIDTH-1][1] != null)
+        if (frame.balls[WIDTH - 1][0] == null && frame.balls[WIDTH - 2][0] != null && frame.balls[WIDTH - 1][1] != null)
             return false;
 
-        if (frame.balls[WIDTH-1][HEIGHT-1] == null && frame.balls[WIDTH-2][HEIGHT-1] != null && frame.balls[WIDTH-1][HEIGHT-2] != null)
+        if (frame.balls[WIDTH - 1][HEIGHT - 1] == null && frame.balls[WIDTH - 2][HEIGHT - 1] != null && frame.balls[WIDTH - 1][HEIGHT - 2] != null)
             return false;
 
-        if (frame.balls[0][HEIGHT-1] == null && frame.balls[1][HEIGHT-1] != null && frame.balls[0][HEIGHT-2] != null)
+        if (frame.balls[0][HEIGHT - 1] == null && frame.balls[1][HEIGHT - 1] != null && frame.balls[0][HEIGHT - 2] != null)
             return false;
 
         for (int i = 1; i < WIDTH - 1; i++) {
