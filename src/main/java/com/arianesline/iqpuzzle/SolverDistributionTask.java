@@ -52,7 +52,7 @@ public class SolverDistributionTask extends Task<Void> {
             Thread.sleep(10);
 
             if (UIUpdateFlag.get()) {
-                size = workers.stream().mapToInt(value -> value.solverTaskQueue.size()).sum();
+                size = workers.stream().mapToInt(solverTask -> solverTask.solverTaskQueue.size()).sum();
                 if (size > maxSize) maxSize = size;
                 solverProgress.set(1.0 - (double) size / maxSize);
                 Platform.runLater(() -> controller.onRefreshUI());
