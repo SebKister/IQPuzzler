@@ -46,6 +46,7 @@ public class IQPuzzleController implements Initializable {
 
     public final static AtomicInteger solutionCounter = new AtomicInteger(0);
     public static ExecutorService executorService;
+    public static ExecutorService distriExecutorService;
     public static SolverDistributionTask distributionTask;
     public static Placement currentPlacement = new Placement(parts);
     static long startSolve;
@@ -86,7 +87,7 @@ public class IQPuzzleController implements Initializable {
         partComboBox.setButtonCell(callback.call(null));
         partComboBox.setCellFactory(callback);
 
-
+        distriExecutorService = Executors.newSingleThreadExecutor();
         buildFrame();
         buildParts();
         buildChallenges();
@@ -165,7 +166,7 @@ public class IQPuzzleController implements Initializable {
         parts.add(part);
         //4
         part = new Part(Color.SEAGREEN);
-        part.noFlip=true;
+        part.noFlip = true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 0, 2));
@@ -191,7 +192,7 @@ public class IQPuzzleController implements Initializable {
         parts.add(part);
         //7
         part = new Part(Color.DARKVIOLET);
-        part.noFlip=true;
+        part.noFlip = true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
@@ -201,7 +202,7 @@ public class IQPuzzleController implements Initializable {
         parts.add(part);
         //8
         part = new Part(Color.LIGHTGREEN);
-        part.noFlip=true;
+        part.noFlip = true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
@@ -211,7 +212,7 @@ public class IQPuzzleController implements Initializable {
         parts.add(part);
         //9
         part = new Part(Color.LIGHTBLUE);
-        part.noFlip=true;
+        part.noFlip = true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 1, 1));
@@ -219,7 +220,7 @@ public class IQPuzzleController implements Initializable {
         parts.add(part);
         //10
         part = new Part(Color.BLUE);
-        part.noFlip=true;
+        part.noFlip = true;
         part.balls.add(new Ball(part, 0, 0));
         part.balls.add(new Ball(part, 0, 1));
         part.balls.add(new Ball(part, 0, 2));
@@ -319,9 +320,9 @@ public class IQPuzzleController implements Initializable {
         endSolve = 0;
         solutionPlacements.clear();
         solutionCounter.set(0);
-        executorService = Executors.newCachedThreadPool();
+
         distributionTask = new SolverDistributionTask(this, currentPlacement);
-        executorService.submit(distributionTask);
+        distriExecutorService.submit(distributionTask);
     }
 
     public void displayTasks() {

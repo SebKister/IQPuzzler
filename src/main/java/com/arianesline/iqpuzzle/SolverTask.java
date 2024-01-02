@@ -67,7 +67,7 @@ public class SolverTask extends Task<Void> {
                                         createdTaskCounter++;
                                     }
 
-                                    if ( frame.canAdd(part, i, j, orient, FlipState.FLIPPED)) {
+                                    if (!part.noFlip && frame.canAdd(part, i, j, orient, FlipState.FLIPPED)) {
                                         // Create new Task
                                         final Positioning positioning = new Positioning(part, i, j, orient, FlipState.FLIPPED);
                                         placements.add(new Placement(taskPlacement, positioning));

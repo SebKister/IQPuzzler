@@ -6,6 +6,7 @@ import javafx.concurrent.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
@@ -31,6 +32,8 @@ public class SolverDistributionTask extends Task<Void> {
         workers.clear();
         freeWorkers.clear();
         keepAlive.set(true);
+
+        executorService = Executors.newFixedThreadPool(MAXRUNNINGTASKS);
         //Create worker tasks
 
         for (int i = 0; i < MAXRUNNINGTASKS; i++) {
