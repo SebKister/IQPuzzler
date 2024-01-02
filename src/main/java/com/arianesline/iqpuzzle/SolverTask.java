@@ -7,13 +7,15 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.arianesline.iqpuzzle.IQPuzzleController.*;
-import static com.arianesline.iqpuzzle.SolverDistributionTask.*;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.freeWorkers;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
 
 
 public class SolverTask extends Task<Void> {
 
-    public static final FlipState[] FLIP_STATES = FlipState.values();
     public static final Orientation[] ORIENTATIONS = Orientation.values();
+    public static final FlipState[] FLIP_STATES = FlipState.values();
+    public static final FlipState[] NOFLIP_STATES = new FlipState[]{FlipState.FLAT};
     final Frame frame = new Frame(WIDTH, HEIGHT);
     final List<Placement> placements = new ArrayList<>();
     public final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
@@ -50,19 +52,17 @@ public class SolverTask extends Task<Void> {
                 //Go over all available parts ( not used in Placement)
                 if (!checkHasFuture(frame)) continue;
 
-                for (int i = 0; i < WIDTH; i++) {
-                    for (int j = 0; j < HEIGHT; j++) {
-                        // Go over all empty cell
-                        if (frame.balls[i][j] == null) {
-                            //Go over all rotation states
-
-                            for (Orientation orient : ORIENTATIONS) {
-                                //Go over all flip states
-                                for (FlipState flststate : FLIP_STATES) {
-                                    for (Part part : freeParts) {
-                                        if (frame.canAdd(part, i, j, orient, flststate)) {
+                for (Part part : freeParts) {
+                    for (Orientation orient : ORIENTATIONS) {
+                        for (FlipState flipState : !part.noFlip ? FLIP_STATES : NOFLIP_STATES) {
+                            var partBox = new PartBox(part, orient, flipState);
+                            for (int i = -partBox.xmin; i < WIDTH - partBox.xmax; i++) {
+                                for (int j = -partBox.ymin; j < HEIGHT - partBox.ymax; j++) {
+                                    // Go over all empty cell
+                                    if (frame.balls[i][j] == null) {
+                                        if (frame.canAdd(part, i, j, orient, flipState)) {
                                             // Create new Task
-                                            final Positioning positioning = new Positioning(part, i, j, orient, flststate);
+                                            final Positioning positioning = new Positioning(part, i, j, orient, flipState);
                                             placements.add(new Placement(taskPlacement, positioning));
                                             createdTaskCounter++;
                                         }
