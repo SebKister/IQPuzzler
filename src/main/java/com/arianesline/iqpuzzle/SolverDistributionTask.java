@@ -1,37 +1,60 @@
 package com.arianesline.iqpuzzle;
 
-import javafx.application.Platform;
-import javafx.concurrent.Task;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.arianesline.iqpuzzle.IQPuzzleController.*;
+import static com.arianesline.iqpuzzle.Core.solving;
+import static com.arianesline.iqpuzzle.IQPuzzleController.updateFlag;
 
-public class SolverDistributionTask extends Task<Void> {
-    public static final int MAXRUNNINGTASKS = Runtime.getRuntime().availableProcessors() - 2;
-    IQPuzzleController controller;
-    static AtomicBoolean keepAlive = new AtomicBoolean(false);
-
+public class SolverDistributionTask implements Runnable {
+    public final static AtomicInteger solutionCounter = new AtomicInteger(0);
+    public static int MAXRUNNINGTASKS;
+    public static ExecutorService executorService;
+    Runnable updateCallBack;
+    public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
     Placement initialPlacement;
-
+    public static int sizeQueue = 1;
+    public static int maxSizeQueue = sizeQueue;
     public static List<SolverTask> workers = new ArrayList<>();
     public static final ConcurrentLinkedQueue<SolverTask> freeWorkers = new ConcurrentLinkedQueue<>();
+    private boolean interrupted;
 
-    public SolverDistributionTask(IQPuzzleController iqPuzzleController, Placement challenge) {
-        controller = iqPuzzleController;
+    public SolverDistributionTask(Runnable callback, Placement challenge) {
+        updateCallBack = callback;
         this.initialPlacement = challenge;
+        interrupted=false;
     }
 
-    @SuppressWarnings("BusyWait")
+    public static boolean isUniqueSolution(Placement placement) {
+        return solutionPlacements.stream().noneMatch(placement1 -> identicPlacement(placement1, placement));
+
+    }
+
+    public static boolean identicPlacement(Placement placementA, Placement placementB) {
+        var frameA = new Frame(Core.WIDTH, Core.HEIGHT);
+        var frameB = new Frame(Core.WIDTH, Core.HEIGHT);
+
+        frameA.loadPlacement(placementA);
+        frameB.loadPlacement(placementB);
+
+        for (int i = 0; i < Core.WIDTH; i++) {
+            for (int j = 0; j < Core.HEIGHT; j++) {
+                if (frameA.balls[i][j] == null || frameB.balls[i][j] == null || !frameA.balls[i][j].part.color.equals(frameB.balls[i][j].part.color))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+
     @Override
-    protected Void call() throws Exception {
+    public void run() {
         workers.clear();
         freeWorkers.clear();
-        keepAlive.set(true);
 
         executorService = Executors.newFixedThreadPool(MAXRUNNINGTASKS);
         //Create worker tasks
@@ -46,30 +69,46 @@ public class SolverDistributionTask extends Task<Void> {
 
         freeWorkers.poll().solverTaskQueue.add(initialPlacement);
 
-        Thread.sleep(100);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
-        int size = 1;
-        int maxSize = size;
+
         int duration = 10;
         int counter = 0;
         while (workers.stream().anyMatch(solverTask -> !solverTask.solverTaskQueue.isEmpty())) {
 
-            Thread.sleep(duration);
-            counter++;
-            if(counter>500) duration=1000;
-
-            if (UIUpdateFlag.get()) {
-                size = workers.stream().mapToInt(solverTask -> solverTask.solverTaskQueue.size()).sum();
-                if (size > maxSize) maxSize = size;
-                solverProgress.set(1.0 - (double) size / maxSize);
-                Platform.runLater(() -> controller.onRefreshUI());
+            try {
+                Thread.sleep(duration);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
+            counter++;
+            if (counter > 500) duration = 1000;
+
+            if (updateFlag.get()) {
+                sizeQueue = workers.stream().mapToInt(solverTask -> solverTask.solverTaskQueue.size()).sum();
+                if (sizeQueue > maxSizeQueue) maxSizeQueue = sizeQueue;
+
+                if (updateCallBack != null) updateCallBack.run();
+            }
+            if(interrupted)
+                break;
         }
 
-        keepAlive.set(false);
-        endSolve = System.currentTimeMillis();
-        Platform.runLater(() -> controller.onRefreshUI());
+        Core.endSolve = System.currentTimeMillis();
+        if (updateCallBack != null) updateCallBack.run();
+
+        for (SolverTask worker : workers) worker.stop();
         executorService.shutdown();
-        return null;
+        solving.set(false);
+    }
+
+
+    public void stop(){
+
+        interrupted=true;
     }
 }
