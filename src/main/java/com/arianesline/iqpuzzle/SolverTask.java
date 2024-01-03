@@ -19,13 +19,14 @@ public class SolverTask implements Runnable {
 
     public long createdTaskCounter;
 
+    private boolean interrupted=false;
 
     @Override
     public void run() {
 
         createdTaskCounter = 0;
 
-        while (keepAlive.get()) {
+        while (!interrupted) {
             var taskPlacement = solverTaskQueue.pollLast();
 
             if (taskPlacement != null) {
@@ -82,6 +83,10 @@ public class SolverTask implements Runnable {
                     freeWorkers.add(this);
             }
         }
+    }
+
+    public void stop(){
+        interrupted=true;
     }
 
     private boolean checkHasFuture(Frame frame) {

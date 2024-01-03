@@ -16,6 +16,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 
+import static com.arianesline.iqpuzzle.Core.distributionTask;
 import static com.arianesline.iqpuzzle.Frame.bugBall;
 import static com.arianesline.iqpuzzle.SolverDistributionTask.*;
 
@@ -172,8 +173,8 @@ public class IQPuzzleController implements Initializable {
         solutionPlacements.clear();
         solutionCounter.set(0);
 
-        Core.distributionTask = new SolverDistributionTask(this::onRefreshUI, Core.currentPlacement);
-        Core.distriExecutorService.submit(Core.distributionTask);
+        distributionTask = new SolverDistributionTask(this::onRefreshUI, Core.currentPlacement);
+        Core.distriExecutorService.submit(distributionTask);
     }
 
     public void displayTasks() {
@@ -366,9 +367,8 @@ public class IQPuzzleController implements Initializable {
 
     public void onStopSolve() {
 
-        keepAlive.set(false);
-        Core.endSolve = System.currentTimeMillis();
-        onRefreshUI();
-        if (executorService != null) executorService.shutdown();
+        if ( distributionTask!= null) {
+            distributionTask.stop();
+        }
     }
 }

@@ -16,17 +16,18 @@ public class SolverDistributionTask implements Runnable {
     public static int MAXRUNNINGTASKS;
     public static ExecutorService executorService;
     Runnable updateCallBack;
-    static AtomicBoolean keepAlive = new AtomicBoolean(false);
     public static final ConcurrentLinkedQueue<Placement> solutionPlacements = new ConcurrentLinkedQueue<>();
     Placement initialPlacement;
     public static int sizeQueue = 1;
     public static int maxSizeQueue = sizeQueue;
     public static List<SolverTask> workers = new ArrayList<>();
     public static final ConcurrentLinkedQueue<SolverTask> freeWorkers = new ConcurrentLinkedQueue<>();
+    private boolean interrupted;
 
     public SolverDistributionTask(Runnable callback, Placement challenge) {
         updateCallBack = callback;
         this.initialPlacement = challenge;
+        interrupted=false;
     }
 
     public static boolean isUniqueSolution(Placement placement) {
@@ -55,7 +56,6 @@ public class SolverDistributionTask implements Runnable {
     public void run() {
         workers.clear();
         freeWorkers.clear();
-        keepAlive.set(true);
 
         executorService = Executors.newFixedThreadPool(MAXRUNNINGTASKS);
         //Create worker tasks
@@ -95,13 +95,21 @@ public class SolverDistributionTask implements Runnable {
 
                 if (updateCallBack != null) updateCallBack.run();
             }
+            if(interrupted)
+                break;
         }
 
         Core.endSolve = System.currentTimeMillis();
         if (updateCallBack != null) updateCallBack.run();
 
-        keepAlive.set(false);
+        for (SolverTask worker : workers) worker.stop();
         executorService.shutdown();
         solving.set(false);
+    }
+
+
+    public void stop(){
+
+        interrupted=true;
     }
 }
