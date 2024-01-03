@@ -27,6 +27,7 @@ tasks.withType(JavaCompile) {
 application {
     mainModule = 'com.arianesline.iqpuzzle'
     mainClass = 'com.arianesline.iqpuzzle.IQPuzzleApplication'
+    applicationDefaultJvmArgs = ["-XX:+UseZGC","-XX:+ZGenerational"]
 }
 
 javafx {
@@ -55,3 +56,4 @@ jlink {
 jlinkZip {
     group = 'distribution'
 }
+

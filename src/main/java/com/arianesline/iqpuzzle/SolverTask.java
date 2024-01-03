@@ -1,22 +1,19 @@
 package com.arianesline.iqpuzzle;
 
-import javafx.concurrent.Task;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static com.arianesline.iqpuzzle.IQPuzzleController.*;
-import static com.arianesline.iqpuzzle.SolverDistributionTask.freeWorkers;
-import static com.arianesline.iqpuzzle.SolverDistributionTask.keepAlive;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.solutionCounter;
+import static com.arianesline.iqpuzzle.SolverDistributionTask.*;
 
 
-public class SolverTask extends Task<Void> {
+public class SolverTask implements Runnable {
 
     public static final Orientation[] ORIENTATIONS = Orientation.values();
     public static final FlipState[] FLIP_STATES = FlipState.values();
     public static final FlipState[] NOFLIP_STATES = new FlipState[]{FlipState.FLAT};
-    final Frame frame = new Frame(WIDTH, HEIGHT);
+    final Frame frame = new Frame(Core.WIDTH, Core.HEIGHT);
     final List<Placement> placements = new ArrayList<>();
     public final ConcurrentLinkedDeque<Placement> solverTaskQueue = new ConcurrentLinkedDeque<>();
 
@@ -24,7 +21,7 @@ public class SolverTask extends Task<Void> {
 
 
     @Override
-    protected Void call() {
+    public void run() {
 
         createdTaskCounter = 0;
 
@@ -56,8 +53,8 @@ public class SolverTask extends Task<Void> {
                     for (Orientation orient : ORIENTATIONS) {
                         for (FlipState flipState : !part.noFlip ? FLIP_STATES : NOFLIP_STATES) {
                             var partBox = new PartBox(part, orient, flipState);
-                            for (int i = -partBox.xmin; i < WIDTH - partBox.xmax; i++) {
-                                for (int j = -partBox.ymin; j < HEIGHT - partBox.ymax; j++) {
+                            for (int i = -partBox.xmin; i < Core.WIDTH - partBox.xmax; i++) {
+                                for (int j = -partBox.ymin; j < Core.HEIGHT - partBox.ymax; j++) {
                                     // Go over all empty cell
                                     if (frame.balls[i][j] == null) {
                                         if (frame.canAdd(part, i, j, orient, flipState)) {
@@ -85,7 +82,6 @@ public class SolverTask extends Task<Void> {
                     freeWorkers.add(this);
             }
         }
-        return null;
     }
 
     private boolean checkHasFuture(Frame frame) {
@@ -96,43 +92,43 @@ public class SolverTask extends Task<Void> {
         if (frame.balls[0][0] == null && frame.balls[0][1] != null && frame.balls[1][0] != null)
             return false;
 
-        if (frame.balls[WIDTH - 1][0] == null && frame.balls[WIDTH - 2][0] != null && frame.balls[WIDTH - 1][1] != null)
+        if (frame.balls[Core.WIDTH - 1][0] == null && frame.balls[Core.WIDTH - 2][0] != null && frame.balls[Core.WIDTH - 1][1] != null)
             return false;
 
-        if (frame.balls[WIDTH - 1][HEIGHT - 1] == null && frame.balls[WIDTH - 2][HEIGHT - 1] != null && frame.balls[WIDTH - 1][HEIGHT - 2] != null)
+        if (frame.balls[Core.WIDTH - 1][Core.HEIGHT - 1] == null && frame.balls[Core.WIDTH - 2][Core.HEIGHT - 1] != null && frame.balls[Core.WIDTH - 1][Core.HEIGHT - 2] != null)
             return false;
 
-        if (frame.balls[0][HEIGHT - 1] == null && frame.balls[1][HEIGHT - 1] != null && frame.balls[0][HEIGHT - 2] != null)
+        if (frame.balls[0][Core.HEIGHT - 1] == null && frame.balls[1][Core.HEIGHT - 1] != null && frame.balls[0][Core.HEIGHT - 2] != null)
             return false;
 
-        for (int i = 1; i < WIDTH - 1; i++) {
-            for (int j = 1; j < HEIGHT - 1; j++) {
+        for (int i = 1; i < Core.WIDTH - 1; i++) {
+            for (int j = 1; j < Core.HEIGHT - 1; j++) {
                 if (frame.balls[i][j] == null && frame.balls[i - 1][j] != null && frame.balls[i + 1][j] != null && frame.balls[i][j - 1] != null && frame.balls[i][j + 1] != null) {
                     return false;
                 }
             }
         }
 
-        for (int i = 1; i < WIDTH - 1; i++) {
+        for (int i = 1; i < Core.WIDTH - 1; i++) {
             if (frame.balls[i][0] == null && frame.balls[i - 1][0] != null && frame.balls[i + 1][0] != null && frame.balls[i][1] != null)
                 return false;
-            if (frame.balls[i][HEIGHT - 1] == null && frame.balls[i - 1][HEIGHT - 1] != null && frame.balls[i + 1][HEIGHT - 1] != null && frame.balls[i][HEIGHT - 2] != null)
+            if (frame.balls[i][Core.HEIGHT - 1] == null && frame.balls[i - 1][Core.HEIGHT - 1] != null && frame.balls[i + 1][Core.HEIGHT - 1] != null && frame.balls[i][Core.HEIGHT - 2] != null)
                 return false;
         }
 
-        for (int j = 1; j < HEIGHT - 1; j++) {
+        for (int j = 1; j < Core.HEIGHT - 1; j++) {
             if (frame.balls[0][j] == null && frame.balls[0][j - 1] != null && frame.balls[0][j + 1] != null && frame.balls[1][j] != null)
                 return false;
 
-            if (frame.balls[WIDTH - 1][j] == null && frame.balls[WIDTH - 1][j - 1] != null && frame.balls[WIDTH - 1][j + 1] != null && frame.balls[WIDTH - 2][j] != null)
+            if (frame.balls[Core.WIDTH - 1][j] == null && frame.balls[Core.WIDTH - 1][j - 1] != null && frame.balls[Core.WIDTH - 1][j + 1] != null && frame.balls[Core.WIDTH - 2][j] != null)
                 return false;
         }
 
         //Look for isolated pairs
 
         //pair horizontal
-        for (int i = 1; i < WIDTH - 2; i++) {
-            for (int j = 1; j < HEIGHT - 1; j++) {
+        for (int i = 1; i < Core.WIDTH - 2; i++) {
+            for (int j = 1; j < Core.HEIGHT - 1; j++) {
                 if (frame.balls[i][j] == null && frame.balls[i + 1][j] == null && frame.balls[i - 1][j] != null && frame.balls[i + 2][j] != null
                         && frame.balls[i][j - 1] != null && frame.balls[i + 1][j - 1] != null
                         && frame.balls[i][j + 1] != null && frame.balls[i + 1][j + 1] != null) {
@@ -142,8 +138,8 @@ public class SolverTask extends Task<Void> {
         }
 
         //pair vertical
-        for (int i = 1; i < WIDTH - 1; i++) {
-            for (int j = 1; j < HEIGHT - 2; j++) {
+        for (int i = 1; i < Core.WIDTH - 1; i++) {
+            for (int j = 1; j < Core.HEIGHT - 2; j++) {
                 if (frame.balls[i][j] == null && frame.balls[i][j + 1] == null && frame.balls[i][j - 1] != null && frame.balls[i][j + 2] != null
                         && frame.balls[i - 1][j] != null && frame.balls[i - 1][j + 1] != null
                         && frame.balls[i + 1][j] != null && frame.balls[i + 1][j + 1] != null) {
@@ -153,52 +149,52 @@ public class SolverTask extends Task<Void> {
         }
 
         // horizontal pair on long side
-        for (int i = 1; i < WIDTH - 2; i++) {
+        for (int i = 1; i < Core.WIDTH - 2; i++) {
 
             if (frame.balls[i][0] == null && frame.balls[i + 1][0] == null && frame.balls[i - 1][0] != null
                     && frame.balls[i][1] != null && frame.balls[i + 1][1] != null && frame.balls[i + 2][0] != null)
                 return false;
 
-            if (frame.balls[i][HEIGHT - 1] == null && frame.balls[i + 1][HEIGHT - 1] == null && frame.balls[i - 1][HEIGHT - 1] != null
-                    && frame.balls[i][HEIGHT - 2] != null && frame.balls[i + 1][HEIGHT - 2] != null && frame.balls[i + 2][HEIGHT - 1] != null)
+            if (frame.balls[i][Core.HEIGHT - 1] == null && frame.balls[i + 1][Core.HEIGHT - 1] == null && frame.balls[i - 1][Core.HEIGHT - 1] != null
+                    && frame.balls[i][Core.HEIGHT - 2] != null && frame.balls[i + 1][Core.HEIGHT - 2] != null && frame.balls[i + 2][Core.HEIGHT - 1] != null)
                 return false;
 
         }
         // horizontal pair on short side
-        for (int i = 1; i < HEIGHT - 1; i++) {
+        for (int i = 1; i < Core.HEIGHT - 1; i++) {
 
             if (frame.balls[0][i] == null && frame.balls[1][i] == null && frame.balls[0][i + 1] != null
                     && frame.balls[1][i + 1] != null && frame.balls[0][i - 1] != null && frame.balls[1][i - 1] != null && frame.balls[2][i] != null)
                 return false;
 
-            if (frame.balls[WIDTH - 1][i] == null && frame.balls[WIDTH - 2][i] == null && frame.balls[WIDTH - 1][i + 1] != null
-                    && frame.balls[WIDTH - 2][i + 1] != null && frame.balls[WIDTH - 1][i - 1] != null && frame.balls[WIDTH - 2][i - 1] != null && frame.balls[WIDTH - 3][i] != null)
+            if (frame.balls[Core.WIDTH - 1][i] == null && frame.balls[Core.WIDTH - 2][i] == null && frame.balls[Core.WIDTH - 1][i + 1] != null
+                    && frame.balls[Core.WIDTH - 2][i + 1] != null && frame.balls[Core.WIDTH - 1][i - 1] != null && frame.balls[Core.WIDTH - 2][i - 1] != null && frame.balls[Core.WIDTH - 3][i] != null)
                 return false;
 
         }
 
         //Vertical pair on long side
-        for (int i = 1; i < WIDTH - 1; i++) {
+        for (int i = 1; i < Core.WIDTH - 1; i++) {
 
             if (frame.balls[i][0] == null && frame.balls[i][1] == null && frame.balls[i - 1][0] != null
                     && frame.balls[i - 1][1] != null && frame.balls[i][2] != null && frame.balls[i + 1][1] != null && frame.balls[i + 1][0] != null)
                 return false;
 
-            if (frame.balls[i][HEIGHT - 1] == null && frame.balls[i][HEIGHT - 2] == null && frame.balls[i - 1][HEIGHT - 1] != null
-                    && frame.balls[i - 1][HEIGHT - 2] != null && frame.balls[i][HEIGHT - 3] != null && frame.balls[i + 1][HEIGHT - 2] != null && frame.balls[i + 1][HEIGHT - 1] != null)
+            if (frame.balls[i][Core.HEIGHT - 1] == null && frame.balls[i][Core.HEIGHT - 2] == null && frame.balls[i - 1][Core.HEIGHT - 1] != null
+                    && frame.balls[i - 1][Core.HEIGHT - 2] != null && frame.balls[i][Core.HEIGHT - 3] != null && frame.balls[i + 1][Core.HEIGHT - 2] != null && frame.balls[i + 1][Core.HEIGHT - 1] != null)
                 return false;
 
         }
 
         //Vertical pair on short side
-        for (int i = 1; i < HEIGHT - 2; i++) {
+        for (int i = 1; i < Core.HEIGHT - 2; i++) {
 
             if (frame.balls[0][i] == null && frame.balls[0][i + 1] == null && frame.balls[0][i - 1] != null
                     && frame.balls[1][i] != null && frame.balls[1][i + 1] != null && frame.balls[0][i + 2] != null)
                 return false;
 
-            if (frame.balls[WIDTH - 1][i] == null && frame.balls[WIDTH - 1][i + 1] == null && frame.balls[WIDTH - 1][i - 1] != null
-                    && frame.balls[WIDTH - 2][i] != null && frame.balls[WIDTH - 2][i + 1] != null && frame.balls[WIDTH - 1][i + 2] != null)
+            if (frame.balls[Core.WIDTH - 1][i] == null && frame.balls[Core.WIDTH - 1][i + 1] == null && frame.balls[Core.WIDTH - 1][i - 1] != null
+                    && frame.balls[Core.WIDTH - 2][i] != null && frame.balls[Core.WIDTH - 2][i + 1] != null && frame.balls[Core.WIDTH - 1][i + 2] != null)
                 return false;
         }
 

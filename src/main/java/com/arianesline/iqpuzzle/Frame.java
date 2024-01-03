@@ -8,7 +8,7 @@ public class Frame {
     final Ball[][] balls;
 
 
-    static final Part bugPart = new Part(Color.BLACK);
+    static final Part bugPart = new Part(Color.BLACK.toString());
     static final Ball bugBall = new Ball(bugPart, 0, 0);
 
     static {
